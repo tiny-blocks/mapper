@@ -1,0 +1,76 @@
+{
+    "name": "tiny-blocks/mapper",
+    "type": "library",
+    "license": "MIT",
+    "homepage": "https://github.com/tiny-blocks/mapper",
+    "description": "Allows mapping data between different formats, such as JSON, arrays, and DTOs, providing flexibility in transforming and serializing information.",
+    "prefer-stable": true,
+    "minimum-stability": "stable",
+    "keywords": [
+        "psr",
+        "dto",
+        "json",
+        "array",
+        "object",
+        "mapper",
+        "tiny-blocks"
+    ],
+    "authors": [
+        {
+            "name": "Gustavo Freze de Araujo Santos",
+            "homepage": "https://github.com/gustavofreze"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/tiny-blocks/mapper/issues",
+        "source": "https://github.com/tiny-blocks/mapper"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "infection/extension-installer": true
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "TinyBlocks\\Mapper\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "TinyBlocks\\Mapper\\": "tests/"
+        }
+    },
+    "require": {
+        "php": "^8.3",
+        "tiny-blocks/collection": "^1.8"
+    },
+    "require-dev": {
+        "phpmd/phpmd": "^2.15",
+        "phpstan/phpstan": "^1",
+        "phpunit/phpunit": "^11",
+        "infection/infection": "^0",
+        "squizlabs/php_codesniffer": "^3.11"
+    },
+    "scripts": {
+        "test": "phpunit --configuration phpunit.xml tests",
+        "phpcs": "phpcs --standard=PSR12 --extensions=php ./src",
+        "phpmd": "phpmd ./src text phpmd.xml --suffixes php --ignore-violations-on-exit",
+        "phpstan": "phpstan analyse -c phpstan.neon.dist --quiet --no-progress",
+        "test-file": "phpunit --configuration phpunit.xml --no-coverage --filter",
+        "mutation-test": "infection --only-covered --threads=max --logger-html=report/coverage/mutation-report.html --coverage=report/coverage",
+        "test-no-coverage": "phpunit --configuration phpunit.xml --no-coverage tests",
+        "review": [
+            "@phpcs",
+            "@phpmd",
+            "@phpstan"
+        ],
+        "tests": [
+            "@test",
+            "@mutation-test"
+        ],
+        "tests-no-coverage": [
+            "@test-no-coverage"
+        ]
+    }
+}
