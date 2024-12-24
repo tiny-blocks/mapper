@@ -6,14 +6,14 @@ namespace TinyBlocks\Mapper\Models;
 
 use Closure;
 use TinyBlocks\Collection\Collectible;
-use TinyBlocks\Collection\Internal\Operations\Order\Order;
+use TinyBlocks\Collection\PreserveKeys;
 use TinyBlocks\Mapper\IterableMappability;
 use TinyBlocks\Mapper\IterableMapper;
 use Traversable;
 
-final readonly class Collection implements Collectible, IterableMapper
+final readonly class Collection implements Collectible
 {
-    use IterableMappability;
+    //use IterableMappability;
 
     private iterable $iterator;
 
@@ -72,6 +72,11 @@ final readonly class Collection implements Collectible, IterableMapper
         // TODO: Implement first() method.
     }
 
+    public function flatten(): Collectible
+    {
+        // TODO: Implement flatten() method.
+    }
+
     public function getBy(int $index, mixed $defaultValueIfNotFound = null): mixed
     {
         // TODO: Implement getBy() method.
@@ -122,13 +127,25 @@ final readonly class Collection implements Collectible, IterableMapper
         // TODO: Implement reduce() method.
     }
 
-    public function sort(Order $order = Order::ASCENDING_KEY, ?Closure $predicate = null): Collectible
-    {
+    public function sort(
+        \TinyBlocks\Collection\Order $order = \TinyBlocks\Collection\Order::ASCENDING_KEY,
+        ?Closure $predicate = null
+    ): Collectible {
         // TODO: Implement sort() method.
     }
 
     public function slice(int $index, int $length = -1): Collectible
     {
         // TODO: Implement slice() method.
+    }
+
+    public function toArray(PreserveKeys $preserveKeys = PreserveKeys::PRESERVE): array
+    {
+        // TODO: Implement toArray() method.
+    }
+
+    public function toJson(PreserveKeys $preserveKeys = PreserveKeys::PRESERVE): string
+    {
+        // TODO: Implement toJson() method.
     }
 }
