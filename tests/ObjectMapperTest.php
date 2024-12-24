@@ -52,6 +52,28 @@ final class ObjectMapperTest extends TestCase
         self::assertSame($expected, $actual);
     }
 
+    #[DataProvider('dataProviderForToJsonDiscardKeys')]
+    public function testObjectToJsonDiscardKeys(ObjectMapper $object, string $expected): void
+    {
+        /** @Given an object with values */
+        /** @When converting the object to JSON while discarding keys */
+        $actual = $object->toJson(keyPreservation: KeyPreservation::DISCARD);
+
+        /** @Then the result should match the expected */
+        self::assertSame($expected, $actual);
+    }
+
+    #[DataProvider('dataProviderForToArrayDiscardKeys')]
+    public function testObjectToArrayDiscardKeys(ObjectMapper $object, iterable $expected): void
+    {
+        /** @Given an object with values */
+        /** @When converting the object to array while discarding keys */
+        $actual = $object->toArray(keyPreservation: KeyPreservation::DISCARD);
+
+        /** @Then the result should match the expected */
+        self::assertSame($expected, $actual);
+    }
+
     #[DataProvider('dataProviderForIterableToObject')]
     public function testIterableToObject(iterable $iterable, ObjectMapper $expected): void
     {
@@ -444,7 +466,7 @@ final class ObjectMapperTest extends TestCase
                                 city: 'New York',
                                 state: ShippingState::NY,
                                 street: '5th Avenue',
-                                number: 1,
+                                number: 717,
                                 country: ShippingCountry::UNITED_STATES
                             ),
                             new ShippingAddress(
@@ -457,6 +479,71 @@ final class ObjectMapperTest extends TestCase
                         ]
                     )
                 )
+            ]
+        ];
+    }
+
+    public static function dataProviderForToJsonDiscardKeys(): iterable
+    {
+        return [
+            'Amount object'                         => [
+                'object'   => Amount::from(value: 999.99, currency: Currency::USD),
+                'expected' => '[999.99,"USD"]'
+            ],
+            'Shipping object with a single address' => [
+                'object'   => new Shipping(
+                    id: PHP_INT_MIN,
+                    addresses: new ShippingAddresses(
+                        elements: [
+                            new ShippingAddress(
+                                city: 'São Paulo',
+                                state: ShippingState::SP,
+                                street: 'Avenida Paulista',
+                                number: 100,
+                                country: ShippingCountry::BRAZIL
+                            )
+                        ]
+                    )
+                ),
+                'expected' => '[-9223372036854775808,[["São Paulo","SP","Avenida Paulista",100,"BR"]]]'
+            ]
+        ];
+    }
+
+    public static function dataProviderForToArrayDiscardKeys(): iterable
+    {
+        return [
+            'Amount object'                         => [
+                'object'   => Amount::from(value: 999.99, currency: Currency::USD),
+                'expected' => [999.99, 'USD']
+            ],
+            'Shipping object with a single address' => [
+                'object'   => new Shipping(
+                    id: PHP_INT_MIN,
+                    addresses: new ShippingAddresses(
+                        elements: [
+                            new ShippingAddress(
+                                city: 'São Paulo',
+                                state: ShippingState::SP,
+                                street: 'Avenida Paulista',
+                                number: 100,
+                                country: ShippingCountry::BRAZIL
+                            )
+                        ]
+                    )
+                ),
+                'expected' => [
+                    PHP_INT_MIN,
+                    [
+                        [
+                            'São Paulo',
+                            ShippingState::SP->name,
+                            'Avenida Paulista',
+                            100,
+                            ShippingCountry::BRAZIL->value
+                        ]
+                    ]
+                ]
             ]
         ];
     }

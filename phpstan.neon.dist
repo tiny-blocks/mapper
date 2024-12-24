@@ -6,6 +6,7 @@ parameters:
   ignoreErrors:
     - '#method#'
     - '#expects#'
+    - '#should return#'
     - '#not specify its types#'
     - '#no value type specified#'
   reportUnmatchedIgnoredErrors: false

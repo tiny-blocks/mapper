@@ -16,6 +16,6 @@ final readonly class JsonMapper
             return '[]';
         }
 
-        return json_encode($value, JSON_PRESERVE_ZERO_FRACTION);
+        return json_encode($value, JSON_PRESERVE_ZERO_FRACTION | JSON_UNESCAPED_UNICODE);
     }
 }
