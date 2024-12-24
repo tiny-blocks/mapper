@@ -1,0 +1,24 @@
+{
+    "logs": {
+        "text": "report/infection/logs/infection-text.log",
+        "summary": "report/infection/logs/infection-summary.log"
+    },
+    "tmpDir": "report/infection/",
+    "minMsi": 100,
+    "timeout": 30,
+    "source": {
+        "directories": [
+            "src"
+        ]
+    },
+    "phpUnit": {
+        "configDir": "",
+        "customPath": "./vendor/bin/phpunit"
+    },
+    "mutators": {
+        "@default": true,
+        "PublicVisibility": false
+    },
+    "minCoveredMsi": 100,
+    "testFramework": "phpunit"
+}

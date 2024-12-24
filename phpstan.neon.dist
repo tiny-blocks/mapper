@@ -1,0 +1,11 @@
+parameters:
+  paths:
+    - src
+  level: 9
+  tmpDir: report/phpstan
+  ignoreErrors:
+    - '#method#'
+    - '#expects#'
+    - '#not specify its types#'
+    - '#no value type specified#'
+  reportUnmatchedIgnoredErrors: false
