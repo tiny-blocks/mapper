@@ -43,7 +43,7 @@
     },
     "require": {
         "php": "^8.3",
-        "tiny-blocks/collection": "^1.8"
+        "tiny-blocks/collection": "1.8.0"
     },
     "require-dev": {
         "phpmd/phpmd": "^2.15",
