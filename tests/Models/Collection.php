@@ -6,14 +6,13 @@ namespace TinyBlocks\Mapper\Models;
 
 use Closure;
 use TinyBlocks\Collection\Collectible;
-use TinyBlocks\Collection\PreserveKeys;
 use TinyBlocks\Mapper\IterableMappability;
 use TinyBlocks\Mapper\IterableMapper;
 use Traversable;
 
-final readonly class Collection implements Collectible
+final readonly class Collection implements Collectible, IterableMapper
 {
-    //use IterableMappability;
+    use IterableMappability;
 
     private iterable $iterator;
 
@@ -137,15 +136,5 @@ final readonly class Collection implements Collectible
     public function slice(int $index, int $length = -1): Collectible
     {
         // TODO: Implement slice() method.
-    }
-
-    public function toArray(PreserveKeys $preserveKeys = PreserveKeys::PRESERVE): array
-    {
-        // TODO: Implement toArray() method.
-    }
-
-    public function toJson(PreserveKeys $preserveKeys = PreserveKeys::PRESERVE): string
-    {
-        // TODO: Implement toJson() method.
     }
 }
