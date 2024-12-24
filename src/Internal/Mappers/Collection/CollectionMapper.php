@@ -21,6 +21,6 @@ final readonly class CollectionMapper
             $mappedValues[$key] = $this->valueMapper->map(value: $element, keyPreservation: $keyPreservation);
         }
 
-        return $mappedValues;
+        return $keyPreservation->shouldPreserveKeys() ? $mappedValues : array_values($mappedValues);
     }
 }
