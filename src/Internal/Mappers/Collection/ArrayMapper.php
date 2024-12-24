@@ -16,7 +16,7 @@ final readonly class ArrayMapper
 
         if ($valueMapper->valueIsCollectible(value: $value)) {
             $collectionMapper = new CollectionMapper(valueMapper: $valueMapper);
-            $mappedValues = $collectionMapper->map(value: $value, keyPreservation: $keyPreservation);
+            return $collectionMapper->map(value: $value, keyPreservation: $keyPreservation);
         }
 
         $reflectionClass = new ReflectionClass($value);
