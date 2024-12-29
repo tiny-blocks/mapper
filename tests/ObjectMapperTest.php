@@ -14,11 +14,13 @@ use TinyBlocks\Mapper\Internal\Exceptions\InvalidCast;
 use TinyBlocks\Mapper\Models\Amount;
 use TinyBlocks\Mapper\Models\Configuration;
 use TinyBlocks\Mapper\Models\Currency;
+use TinyBlocks\Mapper\Models\Customer;
 use TinyBlocks\Mapper\Models\Decimal;
 use TinyBlocks\Mapper\Models\Dragon;
 use TinyBlocks\Mapper\Models\DragonSkills;
 use TinyBlocks\Mapper\Models\DragonType;
 use TinyBlocks\Mapper\Models\ExpirationDate;
+use TinyBlocks\Mapper\Models\Merchant;
 use TinyBlocks\Mapper\Models\Order;
 use TinyBlocks\Mapper\Models\Product;
 use TinyBlocks\Mapper\Models\Service;
@@ -27,6 +29,7 @@ use TinyBlocks\Mapper\Models\ShippingAddress;
 use TinyBlocks\Mapper\Models\ShippingAddresses;
 use TinyBlocks\Mapper\Models\ShippingCountry;
 use TinyBlocks\Mapper\Models\ShippingState;
+use TinyBlocks\Mapper\Models\Stores;
 
 final class ObjectMapperTest extends TestCase
 {
@@ -85,6 +88,20 @@ final class ObjectMapperTest extends TestCase
         self::assertSame($expected->toArray(), $actual->toArray());
         self::assertEquals($expected, $actual);
         self::assertNotSame($expected, $actual);
+    }
+
+    public function testIterableToObjectWithDefaultParameterValue(): void
+    {
+        /** @Given an iterable with values */
+        $iterable = ['name' => 'Zephyrax the Tempest'];
+
+        /** @When converting the iterable to an object */
+        $actual = Customer::fromIterable(iterable: $iterable);
+
+        /** @Then the result should have the default value for the missing parameter */
+        self::assertSame('Zephyrax the Tempest', $actual->name);
+        self::assertSame(0, $actual->score);
+        self::assertNull($actual->gender);
     }
 
     public function testInvalidObjectValueToArrayReturnsEmptyArray(): void
@@ -161,13 +178,13 @@ final class ObjectMapperTest extends TestCase
                 'expected' => '{"value":"2000-01-01 00:00:00"}'
             ],
             'Shipping object with no addresses'       => [
-                'object'   => new Shipping(id: PHP_INT_MAX, addresses: new ShippingAddresses()),
+                'object'   => new Shipping(id: PHP_INT_MAX, addresses: ShippingAddresses::createFromEmpty()),
                 'expected' => '{"id": 9223372036854775807,"addresses":[]}'
             ],
             'Shipping object with a single address'   => [
                 'object'   => new Shipping(
                     id: PHP_INT_MIN,
-                    addresses: new ShippingAddresses(
+                    addresses: ShippingAddresses::createFrom(
                         elements: [
                             new ShippingAddress(
                                 city: 'São Paulo',
@@ -184,7 +201,7 @@ final class ObjectMapperTest extends TestCase
             'Shipping object with multiple addresses' => [
                 'object'   => new Shipping(
                     id: 100000,
-                    addresses: new ShippingAddresses(
+                    addresses: ShippingAddresses::createFrom(
                         elements: [
                             new ShippingAddress(
                                 city: 'New York',
@@ -270,7 +287,7 @@ final class ObjectMapperTest extends TestCase
                 'expected' => ['value' => '2000-01-01 00:00:00']
             ],
             'Shipping object with no addresses'       => [
-                'object'   => new Shipping(id: PHP_INT_MAX, addresses: new ShippingAddresses()),
+                'object'   => new Shipping(id: PHP_INT_MAX, addresses: ShippingAddresses::createFromEmpty()),
                 'expected' => [
                     'id'        => PHP_INT_MAX,
                     'addresses' => []
@@ -279,7 +296,7 @@ final class ObjectMapperTest extends TestCase
             'Shipping object with a single address'   => [
                 'object'   => new Shipping(
                     id: PHP_INT_MIN,
-                    addresses: new ShippingAddresses(
+                    addresses: ShippingAddresses::createFrom(
                         elements: [
                             new ShippingAddress(
                                 city: 'São Paulo',
@@ -307,7 +324,7 @@ final class ObjectMapperTest extends TestCase
             'Shipping object with multiple addresses' => [
                 'object'   => new Shipping(
                     id: 100000,
-                    addresses: new ShippingAddresses(
+                    addresses: ShippingAddresses::createFrom(
                         elements: [
                             new ShippingAddress(
                                 city: 'New York',
@@ -391,6 +408,26 @@ final class ObjectMapperTest extends TestCase
                     stockBatch: new ArrayIterator([1000, 2000, 3000])
                 )
             ],
+            'Customer object'                         => [
+                'iterable' => ['name' => 'Zephyrax the Tempest'],
+                'expected' => new Customer(name: 'Zephyrax the Tempest', score: 0, gender: null)
+            ],
+            'Merchant object'                         => [
+                'iterable' => [
+                    'id'     => '1dc6ca7a-e5f9-4c04-8fdf-16630c3009e3',
+                    'stores' => [
+                        ['name' => 'Store A'],
+                        ['name' => 'Store B']
+                    ]
+                ],
+                'expected' => new Merchant(
+                    id: '1dc6ca7a-e5f9-4c04-8fdf-16630c3009e3',
+                    stores: Stores::createFrom(elements: [
+                        ['name' => 'Store A'],
+                        ['name' => 'Store B']
+                    ])
+                )
+            ],
             'Configuration object'                    => [
                 'iterable' => [
                     'id'      => PHP_INT_MAX,
@@ -408,7 +445,7 @@ final class ObjectMapperTest extends TestCase
             ],
             'Shipping object with no addresses'       => [
                 'iterable' => ['id' => PHP_INT_MAX, 'addresses' => []],
-                'expected' => new Shipping(id: PHP_INT_MAX, addresses: new ShippingAddresses())
+                'expected' => new Shipping(id: PHP_INT_MAX, addresses: ShippingAddresses::createFromEmpty())
             ],
             'Shipping object with a single address'   => [
                 'iterable' => [
@@ -425,7 +462,7 @@ final class ObjectMapperTest extends TestCase
                 ],
                 'expected' => new Shipping(
                     id: PHP_INT_MIN,
-                    addresses: new ShippingAddresses(
+                    addresses: ShippingAddresses::createFrom(
                         elements: [
                             new ShippingAddress(
                                 city: 'São Paulo',
@@ -460,7 +497,7 @@ final class ObjectMapperTest extends TestCase
                 ],
                 'expected' => new Shipping(
                     id: PHP_INT_MIN,
-                    addresses: new ShippingAddresses(
+                    addresses: ShippingAddresses::createFrom(
                         elements: [
                             new ShippingAddress(
                                 city: 'New York',
@@ -493,7 +530,7 @@ final class ObjectMapperTest extends TestCase
             'Shipping object with a single address' => [
                 'object'   => new Shipping(
                     id: PHP_INT_MIN,
-                    addresses: new ShippingAddresses(
+                    addresses: ShippingAddresses::createFrom(
                         elements: [
                             new ShippingAddress(
                                 city: 'São Paulo',
@@ -520,7 +557,7 @@ final class ObjectMapperTest extends TestCase
             'Shipping object with a single address' => [
                 'object'   => new Shipping(
                     id: PHP_INT_MIN,
-                    addresses: new ShippingAddresses(
+                    addresses: ShippingAddresses::createFrom(
                         elements: [
                             new ShippingAddress(
                                 city: 'São Paulo',
