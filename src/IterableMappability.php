@@ -22,4 +22,9 @@ trait IterableMappability
 
         return $mapper->map(value: $this, keyPreservation: $keyPreservation);
     }
+
+    public function getType(): string
+    {
+        return static::class;
+    }
 }

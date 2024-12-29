@@ -9,4 +9,10 @@ namespace TinyBlocks\Mapper;
  */
 interface IterableMapper extends Mapper
 {
+    /**
+     * Get the type of the iterable collection of objects.
+     *
+     * @return string The type of the objects in the collection.
+     */
+    public function getType(): string;
 }

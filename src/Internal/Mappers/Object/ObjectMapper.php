@@ -4,28 +4,33 @@ declare(strict_types=1);
 
 namespace TinyBlocks\Mapper\Internal\Mappers\Object;
 
-use ReflectionClass;
-use TinyBlocks\Mapper\Internal\Mappers\Object\Casters\CastingHandler;
+use TinyBlocks\Mapper\Internal\Mappers\Object\Casters\CasterHandler;
 
 final readonly class ObjectMapper
 {
     public function map(iterable $iterable, string $class): mixed
     {
-        $reflectionClass = new ReflectionClass($class);
-        $properties = $reflectionClass->getProperties();
-        $instance = $reflectionClass->newInstanceWithoutConstructor();
+        $reflectionClass = Reflector::reflectFrom(class: $class);
 
-        $data = iterator_to_array($iterable);
+        $parameters = $reflectionClass->getParameters();
+        $inputProperties = iterator_to_array($iterable);
+        $constructorArguments = [];
 
-        foreach ($properties as $property) {
-            $value = $data[$property->getName()] ?? $data;
+        foreach ($parameters as $parameter) {
+            $name = $parameter->getName();
+            $value = $inputProperties[$name] ?? null;
 
-            $caster = new CastingHandler(value: $value, targetProperty: $property);
-            $castedValue = $caster->applyCast();
+            if ($value !== null) {
+                $caster = new CasterHandler(parameter: $parameter);
+                $castedValue = $caster->castValue(value: $value);
 
-            $property->setValue($instance, $castedValue);
+                $constructorArguments[] = $castedValue;
+                continue;
+            }
+
+            $constructorArguments[] = $parameter->getDefaultValue();
         }
 
-        return $instance;
+        return $reflectionClass->newInstance(constructorArguments: $constructorArguments);
     }
 }

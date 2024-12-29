@@ -11,7 +11,7 @@ use TinyBlocks\Mapper\IterableMappability;
 use TinyBlocks\Mapper\IterableMapper;
 use Traversable;
 
-final readonly class Collection implements Collectible, IterableMapper
+final readonly class Stores implements IterableMapper, Collectible
 {
     use IterableMappability;
 
@@ -22,9 +22,9 @@ final readonly class Collection implements Collectible, IterableMapper
         $this->iterator = $iterator;
     }
 
-    public static function createFrom(iterable $elements): Collectible
+    public static function createFrom(iterable $elements): Stores
     {
-        return new Collection(iterator: $elements);
+        return new Stores(iterator: $elements);
     }
 
     public static function createFromEmpty(): Collectible
