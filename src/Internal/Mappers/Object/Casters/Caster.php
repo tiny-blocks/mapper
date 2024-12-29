@@ -9,14 +9,14 @@ use TinyBlocks\Mapper\Internal\Exceptions\InvalidCast;
 /**
  * Responsible for applying a cast to values, based on a specific type.
  */
-interface TypeCaster
+interface Caster
 {
     /**
-     * Applies a cast to the provided value.
+     * Casts the given value to a specific type.
      *
      * @param mixed $value The value to be cast.
      * @return mixed The cast value.
-     * @throws InvalidCast Thrown when the value cannot be cast to the expected type.
+     * @throws InvalidCast If the value cannot be cast to the expected type.
      */
-    public function applyCast(mixed $value): mixed;
+    public function castValue(mixed $value): mixed;
 }

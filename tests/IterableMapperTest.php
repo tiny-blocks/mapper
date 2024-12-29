@@ -190,7 +190,7 @@ final class IterableMapperTest extends TestCase
             ],
             'Shipping object with no addresses'       => [
                 'elements' => [
-                    new Shipping(id: PHP_INT_MAX, addresses: new ShippingAddresses())
+                    new Shipping(id: PHP_INT_MAX, addresses: ShippingAddresses::createFromEmpty())
                 ],
                 'expected' => '[{"id":9223372036854775807,"addresses":[]}]'
             ],
@@ -198,7 +198,7 @@ final class IterableMapperTest extends TestCase
                 'elements' => [
                     new Shipping(
                         id: PHP_INT_MIN,
-                        addresses: new ShippingAddresses(
+                        addresses: ShippingAddresses::createFrom(
                             elements: [
                                 new ShippingAddress(
                                     city: 'São Paulo',
@@ -217,7 +217,7 @@ final class IterableMapperTest extends TestCase
                 'elements' => [
                     new Shipping(
                         id: 100000,
-                        addresses: new ShippingAddresses(
+                        addresses: ShippingAddresses::createFrom(
                             elements: [
                                 new ShippingAddress(
                                     city: 'New York',
@@ -327,7 +327,7 @@ final class IterableMapperTest extends TestCase
             ],
             'Shipping object with no addresses'       => [
                 'elements' => [
-                    new Shipping(id: PHP_INT_MAX, addresses: new ShippingAddresses())
+                    new Shipping(id: PHP_INT_MAX, addresses: ShippingAddresses::createFromEmpty())
                 ],
                 'expected' => [
                     [
@@ -340,7 +340,7 @@ final class IterableMapperTest extends TestCase
                 'elements' => [
                     new Shipping(
                         id: PHP_INT_MIN,
-                        addresses: new ShippingAddresses(
+                        addresses: ShippingAddresses::createFrom(
                             elements: [
                                 new ShippingAddress(
                                     city: 'São Paulo',
@@ -372,7 +372,7 @@ final class IterableMapperTest extends TestCase
                 'elements' => [
                     new Shipping(
                         id: 100000,
-                        addresses: new ShippingAddresses(
+                        addresses: ShippingAddresses::createFrom(
                             elements: [
                                 new ShippingAddress(
                                     city: 'New York',

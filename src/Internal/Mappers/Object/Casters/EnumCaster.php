@@ -2,20 +2,19 @@
 
 declare(strict_types=1);
 
-namespace TinyBlocks\Mapper\Internal\Mappers\Object\Casters\Types;
+namespace TinyBlocks\Mapper\Internal\Mappers\Object\Casters;
 
 use ReflectionEnum;
 use TinyBlocks\Mapper\Internal\Exceptions\InvalidCast;
-use TinyBlocks\Mapper\Internal\Mappers\Object\Casters\TypeCaster;
 use UnitEnum;
 
-final readonly class EnumCaster implements TypeCaster
+final readonly class EnumCaster implements Caster
 {
     public function __construct(public string $class)
     {
     }
 
-    public function applyCast(mixed $value): UnitEnum
+    public function castValue(mixed $value): UnitEnum
     {
         $reflectionEnum = new ReflectionEnum($this->class);
 
