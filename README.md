@@ -27,15 +27,62 @@ composer require tiny-blocks/mapper
 
 ## How to use
 
-### Object
+The examples demonstrate how to create objects from iterables, map objects to arrays, and convert objects to JSON.
 
-The library exposes available behaviors through the `ObjectMapper` interface, and the implementation of these behaviors
-through the `ObjectMappability` trait.
+### Create an object from an iterable
 
-#### Create an object from an iterable
+First, define your classes using the `ObjectMapper` interface and `ObjectMappability` trait:
 
-You can map data from an iterable (such as an array) into an object. Here's how to map a `Shipping` object from an
-iterable:
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace Example;
+
+use TinyBlocks\Mapper\ObjectMappability;
+use TinyBlocks\Mapper\ObjectMapper;
+
+final readonly class ShippingAddress implements ObjectMapper
+{
+    use ObjectMappability;
+
+    public function __construct(
+        private string $city,
+        private ShippingState $state,
+        private string $street,
+        private int $number,
+        private ShippingCountry $country
+    ) {
+    }
+}
+```
+
+Next, define a collection class implementing `IterableMapper`:
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace Example;
+
+use TinyBlocks\Collection\Collection;
+use TinyBlocks\Mapper\IterableMappability;
+use TinyBlocks\Mapper\IterableMapper;
+
+final class ShippingAddresses extends Collection implements IterableMapper
+{
+    use IterableMappability;
+
+    public function getType(): string
+    {
+        return ShippingAddress::class;
+    }
+}
+```
+
+Finally, create a class that uses the collection:
 
 ```php
 <?php
@@ -55,39 +102,6 @@ final readonly class Shipping implements ObjectMapper
     {
     }
 }
-```
-
-Next, define a `ShippingAddresses` class that is iterable:
-
-```php
-<?php
-
-declare(strict_types=1);
-
-namespace Example;
-
-use ArrayIterator;use IteratorAggregate;use TinyBlocks\Mapper\ObjectMappability;use TinyBlocks\Mapper\ObjectMapper;use Traversable;
-
-final class ShippingAddresses implements ObjectMapper, IteratorAggregate
-{
-    use ObjectMappability;
-
-    /**
-     * @var \TinyBlocks\Mapper\Models\ShippingAddress[] $elements
-     */
-    private iterable $elements;
-
-    public function __construct(iterable $elements = [])
-    {
-        $this->elements = is_array($elements) ? $elements : iterator_to_array($elements);
-    }
-
-    public function getIterator(): Traversable
-    {
-        return new ArrayIterator($this->elements);
-    }
-}
-
 ```
 
 Now you can map data into a `Shipping` object using `fromIterable`:
@@ -111,7 +125,7 @@ $shipping = Shipping::fromIterable(iterable: [
 ]);
 ```
 
-#### Map object to array
+### Map object to array
 
 Once the object is created, you can easily convert it into an array representation.
 
@@ -136,7 +150,7 @@ This will output the following array:
 ]
 ```
 
-#### Map object to JSON
+### Map object to JSON
 
 Similarly, you can convert the object into a JSON representation.
 
