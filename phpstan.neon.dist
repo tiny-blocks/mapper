@@ -7,6 +7,7 @@ parameters:
     - '#method#'
     - '#expects#'
     - '#should return#'
+    - '#is used zero times#'
     - '#type mixed supplied#'
     - '#not specify its types#'
     - '#no value type specified#'
