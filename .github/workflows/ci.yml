@@ -8,6 +8,7 @@ permissions:
 
 env:
   PHP_VERSION: '8.3'
+  COMPOSER_ROOT_VERSION: '1.2.0'
 
 jobs:
   auto-review:
