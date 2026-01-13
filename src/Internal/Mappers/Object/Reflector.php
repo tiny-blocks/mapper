@@ -29,7 +29,7 @@ final readonly class Reflector
         return $this->parameters;
     }
 
-    public function newInstance(array $constructorArguments): mixed
+    public function newInstance(array $constructorArguments): object
     {
         $instance = $this->constructor && $this->constructor->isPrivate()
             ? $this->newInstanceWithoutConstructor()
@@ -42,7 +42,7 @@ final readonly class Reflector
         return $instance;
     }
 
-    public function newInstanceWithoutConstructor(): mixed
+    public function newInstanceWithoutConstructor(): object
     {
         return $this->reflectionClass->newInstanceWithoutConstructor();
     }

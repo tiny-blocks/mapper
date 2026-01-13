@@ -18,6 +18,6 @@ final readonly class DefaultCaster implements Caster
             return $value;
         }
 
-        return (new ObjectMapper())->map(iterable: $value, class: $this->class);
+        return new ObjectMapper()->map(iterable: $value, class: $this->class);
     }
 }

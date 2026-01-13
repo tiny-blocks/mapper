@@ -14,9 +14,9 @@ final readonly class ValueMapper
     public function map(mixed $value, KeyPreservation $keyPreservation): mixed
     {
         return match (true) {
-            is_a($value, UnitEnum::class)          => (new EnumMapper())->map(value: $value),
-            is_a($value, DateTimeInterface::class) => (new DateTimeMapper())->map(value: $value),
-            is_object($value)                      => (new ArrayMapper())->map(
+            is_a($value, UnitEnum::class)          => new EnumMapper()->map(value: $value),
+            is_a($value, DateTimeInterface::class) => new DateTimeMapper()->map(value: $value),
+            is_object($value)                      => new ArrayMapper()->map(
                 value: $value,
                 keyPreservation: $keyPreservation
             ),

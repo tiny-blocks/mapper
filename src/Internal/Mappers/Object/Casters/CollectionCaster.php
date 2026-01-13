@@ -30,7 +30,7 @@ final readonly class CollectionCaster implements Caster
         $mapped = [];
 
         foreach ($value as $item) {
-            $mapped[] = (new ObjectMapper())->map(iterable: $item, class: $type);
+            $mapped[] = new ObjectMapper()->map(iterable: $item, class: $type);
         }
 
         return $instance->createFrom(elements: $mapped);
