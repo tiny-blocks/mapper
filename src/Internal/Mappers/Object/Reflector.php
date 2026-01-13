@@ -29,7 +29,7 @@ final readonly class Reflector
         return $this->parameters;
     }
 
-    public function newInstance(array $constructorArguments): ?object
+    public function newInstance(array $constructorArguments): object
     {
         $instance = $this->constructor && $this->constructor->isPrivate()
             ? $this->newInstanceWithoutConstructor()
