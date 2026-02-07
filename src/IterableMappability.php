@@ -4,23 +4,25 @@ declare(strict_types=1);
 
 namespace TinyBlocks\Mapper;
 
-use TinyBlocks\Mapper\Internal\Mappers\Collection\ArrayMapper;
-use TinyBlocks\Mapper\Internal\Mappers\Json\JsonMapper;
+use TinyBlocks\Mapper\Internal\Factories\StrategyResolverFactory;
+use TinyBlocks\Mapper\Internal\Mappers\ArrayMapper;
+use TinyBlocks\Mapper\Internal\Mappers\JsonMapper;
 
 trait IterableMappability
 {
     public function toJson(KeyPreservation $keyPreservation = KeyPreservation::PRESERVE): string
     {
-        $mapper = new JsonMapper();
-
-        return $mapper->map(value: $this->toArray(keyPreservation: $keyPreservation));
+        $jsonMapper = new JsonMapper();
+        return $jsonMapper->map(value: $this->toArray(keyPreservation: $keyPreservation));
     }
 
     public function toArray(KeyPreservation $keyPreservation = KeyPreservation::PRESERVE): array
     {
-        $mapper = new ArrayMapper();
+        $factory = new StrategyResolverFactory();
+        $resolver = $factory->create();
+        $arrayMapper = new ArrayMapper(resolver: $resolver);
 
-        return $mapper->map(value: $this, keyPreservation: $keyPreservation);
+        return $arrayMapper->map(value: $this, keyPreservation: $keyPreservation);
     }
 
     public function getType(): string

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace TinyBlocks\Mapper\Internal\Mappers\Object\Casters;
 
 use ReflectionEnum;
+use ReflectionEnumBackedCase;
 use TinyBlocks\Mapper\Internal\Exceptions\InvalidCast;
 use UnitEnum;
 
@@ -16,12 +17,12 @@ final readonly class EnumCaster implements Caster
 
     public function castValue(mixed $value): UnitEnum
     {
-        $reflectionEnum = new ReflectionEnum($this->class);
+        $reflection = new ReflectionEnum(objectOrClass: $this->class);
 
-        foreach ($reflectionEnum->getCases() as $case) {
+        foreach ($reflection->getCases() as $case) {
             $caseInstance = $case->getValue();
 
-            if ($case->getEnum()->isBacked() && $case->getBackingValue() === $value) {
+            if ($case instanceof ReflectionEnumBackedCase && $case->getBackingValue() === $value) {
                 return $caseInstance;
             }
 

@@ -10,7 +10,7 @@ final readonly class GeneratorCaster implements Caster
 {
     public function castValue(mixed $value): Generator
     {
-        if (is_iterable($value)) {
+        if (is_iterable(value: $value)) {
             foreach ($value as $item) {
                 yield $item;
             }

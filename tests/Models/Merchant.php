@@ -1,6 +1,8 @@
 <?php
 
-namespace TinyBlocks\Mapper\Models;
+declare(strict_types=1);
+
+namespace Test\TinyBlocks\Mapper\Models;
 
 use TinyBlocks\Mapper\ObjectMappability;
 use TinyBlocks\Mapper\ObjectMapper;

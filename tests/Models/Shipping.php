@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace TinyBlocks\Mapper\Models;
+namespace Test\TinyBlocks\Mapper\Models;
 
 use TinyBlocks\Mapper\ObjectMappability;
 use TinyBlocks\Mapper\ObjectMapper;

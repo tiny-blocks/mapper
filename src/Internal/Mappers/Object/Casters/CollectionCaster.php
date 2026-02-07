@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace TinyBlocks\Mapper\Internal\Mappers\Object\Casters;
 
 use TinyBlocks\Collection\Collectible;
-use TinyBlocks\Mapper\Internal\Mappers\Object\ObjectMapper;
-use TinyBlocks\Mapper\Internal\Mappers\Object\Reflector;
 use TinyBlocks\Mapper\IterableMapper;
 
 final readonly class CollectionCaster implements Caster
@@ -17,9 +15,10 @@ final readonly class CollectionCaster implements Caster
 
     public function castValue(mixed $value): Collectible
     {
-        $reflectionClass = Reflector::reflectFrom(class: $this->class);
+        $reflector = Reflector::reflectFrom(class: $this->class);
+
         /** @var IterableMapper & Collectible $instance */
-        $instance = $reflectionClass->newInstanceWithoutConstructor();
+        $instance = $reflector->newInstanceWithoutConstructor();
 
         $type = $instance->getType();
 
@@ -28,9 +27,10 @@ final readonly class CollectionCaster implements Caster
         }
 
         $mapped = [];
+        $mapper = new ObjectMapper();
 
         foreach ($value as $item) {
-            $mapped[] = new ObjectMapper()->map(iterable: $item, class: $type);
+            $mapped[] = $mapper->map(iterable: $item, class: $type);
         }
 
         return $instance->createFrom(elements: $mapped);

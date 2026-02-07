@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace TinyBlocks\Mapper\Internal\Mappers\Object;
+namespace TinyBlocks\Mapper\Internal\Mappers\Object\Casters;
 
 use ReflectionClass;
 use ReflectionMethod;
@@ -10,18 +10,19 @@ use ReflectionMethod;
 final readonly class Reflector
 {
     private ?ReflectionMethod $constructor;
-
     private array $parameters;
 
-    private function __construct(private ReflectionClass $reflectionClass)
+    public function __construct(private ReflectionClass $reflectionClass)
     {
         $this->constructor = $reflectionClass->getConstructor();
-        $this->parameters = $this->constructor ? $this->constructor->getParameters() : [];
+        $this->parameters = $this->constructor instanceof ReflectionMethod
+            ? $this->constructor->getParameters()
+            : [];
     }
 
     public static function reflectFrom(string $class): Reflector
     {
-        return new Reflector(reflectionClass: new ReflectionClass($class));
+        return new Reflector(reflectionClass: new ReflectionClass(objectOrClass: $class));
     }
 
     public function getParameters(): array
@@ -31,12 +32,12 @@ final readonly class Reflector
 
     public function newInstance(array $constructorArguments): object
     {
-        $instance = $this->constructor && $this->constructor->isPrivate()
+        $instance = $this->constructor instanceof ReflectionMethod && $this->constructor->isPrivate()
             ? $this->newInstanceWithoutConstructor()
-            : $this->reflectionClass->newInstanceArgs($constructorArguments);
+            : $this->reflectionClass->newInstanceArgs(args: $constructorArguments);
 
-        if ($this->constructor && $this->constructor->isPrivate()) {
-            $this->constructor->invokeArgs($instance, $constructorArguments);
+        if ($this->constructor instanceof ReflectionMethod && $this->constructor->isPrivate()) {
+            $this->constructor->invokeArgs(object: $instance, args: $constructorArguments);
         }
 
         return $instance;

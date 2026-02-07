@@ -4,11 +4,13 @@ parameters:
   level: 9
   tmpDir: report/phpstan
   ignoreErrors:
-    - '#method#'
-    - '#expects#'
-    - '#should return#'
+    - '#T of#'
+    - '#mixed#'
+    - '#template type#'
+    - '#ReflectionType#'
+    - '#generic interface#'
     - '#is used zero times#'
-    - '#type mixed supplied#'
-    - '#not specify its types#'
-    - '#no value type specified#'
+    - '#expects class-string#'
+    - '#value type specified#'
+    - '#not specify its types: T#'
   reportUnmatchedIgnoredErrors: false

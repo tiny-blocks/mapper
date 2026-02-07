@@ -10,6 +10,6 @@ final readonly class ArrayIteratorCaster implements Caster
 {
     public function castValue(mixed $value): ArrayIterator
     {
-        return new ArrayIterator($value);
+        return new ArrayIterator(array: $value);
     }
 }

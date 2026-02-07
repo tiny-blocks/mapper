@@ -26,6 +26,9 @@ enum KeyPreservation
      */
     public function shouldPreserveKeys(): bool
     {
-        return $this === self::PRESERVE;
+        return match ($this) {
+            self::PRESERVE => true,
+            self::DISCARD  => false
+        };
     }
 }
