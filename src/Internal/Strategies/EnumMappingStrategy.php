@@ -8,14 +8,10 @@ use TinyBlocks\Mapper\Internal\Detectors\EnumDetector;
 use TinyBlocks\Mapper\Internal\Transformers\EnumTransformer;
 use TinyBlocks\Mapper\KeyPreservation;
 
-final readonly class EnumMappingStrategy implements MappingStrategy
+final readonly class EnumMappingStrategy implements ConditionalMappingStrategy
 {
-    private const int PRIORITY = 80;
-
-    public function __construct(
-        private EnumDetector $detector,
-        private EnumTransformer $transformer
-    ) {
+    public function __construct(private EnumDetector $detector, private EnumTransformer $transformer)
+    {
     }
 
     public function map(mixed $value, KeyPreservation $keyPreservation): string|int
@@ -26,10 +22,5 @@ final readonly class EnumMappingStrategy implements MappingStrategy
     public function supports(mixed $value): bool
     {
         return $this->detector->matches(value: $value);
-    }
-
-    public function priority(): int
-    {
-        return self::PRIORITY;
     }
 }

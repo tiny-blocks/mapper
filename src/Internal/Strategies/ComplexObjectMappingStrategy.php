@@ -10,12 +10,8 @@ use TinyBlocks\Mapper\KeyPreservation;
 
 final readonly class ComplexObjectMappingStrategy implements MappingStrategy
 {
-    private const int PRIORITY = 50;
-
-    public function __construct(
-        private ReflectionExtractor $extractor,
-        private RecursiveValueResolver $resolver
-    ) {
+    public function __construct(private ReflectionExtractor $extractor, private RecursiveValueResolver $resolver)
+    {
     }
 
     public function map(mixed $value, KeyPreservation $keyPreservation = KeyPreservation::PRESERVE): array
@@ -33,15 +29,5 @@ final readonly class ComplexObjectMappingStrategy implements MappingStrategy
         return $keyPreservation->shouldPreserveKeys()
             ? $mapped
             : array_values($mapped);
-    }
-
-    public function supports(mixed $value): bool
-    {
-        return is_object(value: $value);
-    }
-
-    public function priority(): int
-    {
-        return self::PRIORITY;
     }
 }

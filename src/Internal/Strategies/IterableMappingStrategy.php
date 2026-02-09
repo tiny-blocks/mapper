@@ -8,12 +8,9 @@ use TinyBlocks\Mapper\Internal\Extractors\IterableExtractor;
 use TinyBlocks\Mapper\Internal\Resolvers\RecursiveValueResolver;
 use TinyBlocks\Mapper\IterableMapper;
 use TinyBlocks\Mapper\KeyPreservation;
-use Traversable;
 
-final readonly class IterableMappingStrategy implements MappingStrategy
+final readonly class IterableMappingStrategy implements ConditionalMappingStrategy
 {
-    private const int PRIORITY = 60;
-
     public function __construct(private IterableExtractor $extractor, private RecursiveValueResolver $resolver)
     {
     }
@@ -32,13 +29,6 @@ final readonly class IterableMappingStrategy implements MappingStrategy
 
     public function supports(mixed $value): bool
     {
-        return is_array($value)
-            || $value instanceof Traversable
-            || $value instanceof IterableMapper;
-    }
-
-    public function priority(): int
-    {
-        return self::PRIORITY;
+        return $value instanceof IterableMapper;
     }
 }

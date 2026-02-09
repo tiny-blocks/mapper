@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace TinyBlocks\Mapper\Internal\Resolvers;
 
+use TinyBlocks\Mapper\Internal\Strategies\ConditionalMappingStrategy;
 use TinyBlocks\Mapper\Internal\Strategies\MappingStrategy;
 
 final class StrategyResolver
 {
     private array $strategies;
 
-    public function __construct(MappingStrategy ...$strategies)
+    public function __construct(private readonly MappingStrategy $default, ConditionalMappingStrategy ...$strategies)
     {
-        $this->strategies = $this->sortByPriority(strategies: $strategies);
+        $this->strategies = $strategies;
     }
 
     public function resolve(mixed $value): MappingStrategy
@@ -23,19 +24,6 @@ final class StrategyResolver
             }
         }
 
-        return end($this->strategies);
-    }
-
-    private function sortByPriority(array $strategies): array
-    {
-        usort(
-            $strategies,
-            static fn(
-                MappingStrategy $current,
-                MappingStrategy $next
-            ): int => $next->priority() <=> $current->priority()
-        );
-
-        return $strategies;
+        return $this->default;
     }
 }

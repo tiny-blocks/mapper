@@ -12,10 +12,10 @@ final readonly class DefaultCaster implements Caster
 
     public function castValue(mixed $value): mixed
     {
-        if (!class_exists(class: $this->class)) {
+        if (!class_exists(class: $this->class) || $value instanceof $this->class) {
             return $value;
         }
 
-        return new ObjectMapper()->map(iterable: $value, class: $this->class);
+        return Reflector::reflectFrom(class: $this->class)->newInstance(constructorArguments: [$value]);
     }
 }

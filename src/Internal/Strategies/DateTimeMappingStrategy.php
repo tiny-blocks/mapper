@@ -8,14 +8,10 @@ use TinyBlocks\Mapper\Internal\Detectors\DateTimeDetector;
 use TinyBlocks\Mapper\Internal\Transformers\DateTimeTransformer;
 use TinyBlocks\Mapper\KeyPreservation;
 
-final readonly class DateTimeMappingStrategy implements MappingStrategy
+final readonly class DateTimeMappingStrategy implements ConditionalMappingStrategy
 {
-    private const int PRIORITY = 70;
-
-    public function __construct(
-        private DateTimeDetector $detector,
-        private DateTimeTransformer $transformer
-    ) {
+    public function __construct(private DateTimeDetector $detector, private DateTimeTransformer $transformer)
+    {
     }
 
     public function map(mixed $value, KeyPreservation $keyPreservation): string
@@ -26,10 +22,5 @@ final readonly class DateTimeMappingStrategy implements MappingStrategy
     public function supports(mixed $value): bool
     {
         return $this->detector->matches(value: $value);
-    }
-
-    public function priority(): int
-    {
-        return self::PRIORITY;
     }
 }

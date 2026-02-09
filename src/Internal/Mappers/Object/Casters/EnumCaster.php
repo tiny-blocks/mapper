@@ -11,12 +11,16 @@ use UnitEnum;
 
 final readonly class EnumCaster implements Caster
 {
-    public function __construct(public string $class)
+    public function __construct(private string $class)
     {
     }
 
     public function castValue(mixed $value): UnitEnum
     {
+        if ($value instanceof $this->class) {
+            return $value;
+        }
+
         $reflection = new ReflectionEnum(objectOrClass: $this->class);
 
         foreach ($reflection->getCases() as $case) {
