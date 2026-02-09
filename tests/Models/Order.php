@@ -13,7 +13,7 @@ final readonly class Order implements ObjectMapper
 {
     use ObjectMappability;
 
-    public function __construct(public string $id, public Generator $items, public DateTimeImmutable $createdAt)
+    public function __construct(public Uuid $id, public Generator $items, public DateTimeImmutable $createdAt)
     {
     }
 }

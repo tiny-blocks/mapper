@@ -13,12 +13,18 @@ final readonly class ReflectionExtractor
     {
         $reflection = new ReflectionClass(objectOrClass: $object);
         $properties = $reflection->getProperties(
-            filter: ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED | ReflectionProperty::IS_PRIVATE
+            filter: ReflectionProperty::IS_PUBLIC
+            | ReflectionProperty::IS_PROTECTED
+            | ReflectionProperty::IS_PRIVATE
         );
 
         $extracted = [];
 
         foreach ($properties as $property) {
+            if ($property->isStatic()) {
+                continue;
+            }
+
             $name = $property->getName();
             $extracted[$name] = $property->getValue(object: $object);
         }

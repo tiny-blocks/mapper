@@ -10,29 +10,13 @@ use Test\TinyBlocks\Mapper\Models\Currency;
 use Test\TinyBlocks\Mapper\Models\Dragon;
 use Test\TinyBlocks\Mapper\Models\DragonSkills;
 use Test\TinyBlocks\Mapper\Models\DragonType;
-use Test\TinyBlocks\Mapper\Models\ShippingAddress;
-use Test\TinyBlocks\Mapper\Models\ShippingCountry;
-use Test\TinyBlocks\Mapper\Models\ShippingState;
 use TinyBlocks\Mapper\Internal\Exceptions\InvalidCast;
 
 final class EnumMappingTest extends TestCase
 {
-    public function testBackedStringEnum(): void
-    {
-        /** @Given an Amount with a backed string enum */
-        $amount = Amount::from(value: 100.00, currency: Currency::BRL);
-
-        /** @When converting to array */
-        $actual = $amount->toArray();
-
-        /** @Then the enum value should be used */
-        self::assertSame('BRL', $actual['currency']);
-        self::assertIsString($actual['currency']);
-    }
-
     public function testPureEnum(): void
     {
-        /** @Given a Dragon with a pure enum */
+        /** @Given a Dragon with a pure enum type */
         $dragon = new Dragon(
             name: 'Smaug',
             type: DragonType::FIRE,
@@ -40,16 +24,46 @@ final class EnumMappingTest extends TestCase
             skills: []
         );
 
-        /** @When converting to array */
+        /** @When mapping the Dragon to an array */
         $actual = $dragon->toArray();
 
-        /** @Then the enum name should be used */
-        self::assertSame('FIRE', $actual['type']);
+        /** @Then the mapped array should have expected values */
+        $expected = [
+            'name'   => 'Smaug',
+            'type'   => 'FIRE',
+            'power'  => 9999.99,
+            'skills' => []
+        ];
+
+        self::assertSame($expected, $actual);
+
+        /** @And the JSON representation should be the mapped JSON object */
+        self::assertJsonStringEqualsJsonString((string)json_encode($expected), $dragon->toJson());
+    }
+
+    public function testBackedStringEnum(): void
+    {
+        /** @Given an Amount with a backed string enum */
+        $amount = Amount::from(value: 100.00, currency: Currency::BRL);
+
+        /** @When mapping the Amount to an array */
+        $actual = $amount->toArray();
+
+        /** @Then the mapped array should have expected values */
+        $expected = [
+            'value'    => 100.00,
+            'currency' => 'BRL'
+        ];
+
+        self::assertSame($expected, $actual);
+
+        /** @And the JSON representation should be the mapped JSON object */
+        self::assertJsonStringEqualsJsonString((string)json_encode($expected), $amount->toJson());
     }
 
     public function testBackedStringEnumArray(): void
     {
-        /** @Given a Dragon with an array of backed enums */
+        /** @Given a Dragon with an array of backed string enums */
         $dragon = new Dragon(
             name: 'Alduin',
             type: DragonType::FIRE,
@@ -61,89 +75,71 @@ final class EnumMappingTest extends TestCase
             ]
         );
 
-        /** @When converting to array */
+        /** @When mapping the Dragon to an array */
         $actual = $dragon->toArray();
 
-        /** @Then enum values should appear in the array */
-        self::assertSame([
-            'fly',
-            'elemental_breath',
-            'regeneration'
-        ], $actual['skills']);
-    }
+        /** @Then the mapped array should have expected values */
+        $expected = [
+            'name'   => 'Alduin',
+            'type'   => 'FIRE',
+            'power'  => 10000.00,
+            'skills' => ['fly', 'elemental_breath', 'regeneration']
+        ];
 
-    public function testMixedEnumTypes(): void
-    {
-        /** @Given a ShippingAddress with both pure and backed enums */
-        $address = new ShippingAddress(
-            city: 'São Paulo',
-            state: ShippingState::SP,
-            street: 'Av Paulista',
-            number: 1000,
-            country: ShippingCountry::BRAZIL
-        );
+        self::assertSame($expected, $actual);
 
-        /** @When converting to array */
-        $actual = $address->toArray();
-
-        /** @Then both enum types should be handled correctly */
-        self::assertSame('SP', $actual['state']);
-        self::assertSame('BR', $actual['country']);
+        /** @And the JSON representation should be the mapped JSON object */
+        self::assertJsonStringEqualsJsonString((string)json_encode($expected), $dragon->toJson());
     }
 
     public function testBackedEnumFromIterable(): void
     {
-        /** @Given data with a backed enum value */
-        $data = [
+        /** @Given an Amount created from iterable data with a backed enum value */
+        $amount = Amount::fromIterable(iterable: [
+            'value'    => 500.00,
+            'currency' => 'USD'
+        ]);
+
+        /** @When mapping the Amount to an array */
+        $actual = $amount->toArray();
+
+        /** @Then the mapped array should have expected values */
+        $expected = [
             'value'    => 500.00,
             'currency' => 'USD'
         ];
 
-        /** @When creating from iterable */
-        $amount = Amount::fromIterable(iterable: $data);
+        self::assertSame($expected, $actual);
 
-        /** @Then the enum should be reconstructed */
-        $actual = $amount->toArray();
-        self::assertSame('USD', $actual['currency']);
-    }
-
-    public function testPureEnumFromIterable(): void
-    {
-        /** @Given data with a pure enum name */
-        $data = [
-            'city'    => 'New York',
-            'state'   => 'NY',
-            'street'  => 'Broadway',
-            'number'  => 100,
-            'country' => 'US'
-        ];
-
-        /** @When creating from iterable */
-        $address = ShippingAddress::fromIterable(iterable: $data);
-
-        /** @Then both enums should be reconstructed */
-        $actual = $address->toArray();
-        self::assertSame('NY', $actual['state']);
-        self::assertSame('US', $actual['country']);
+        /** @And the JSON representation should be the mapped JSON object */
+        self::assertJsonStringEqualsJsonString((string)json_encode($expected), $amount->toJson());
     }
 
     public function testEnumArrayFromIterable(): void
     {
-        /** @Given Dragon data with skill values */
-        $data = [
+        /** @Given a Dragon created from iterable data with enum values as strings */
+        $dragon = Dragon::fromIterable(iterable: [
             'name'   => 'Bahamut',
             'type'   => 'FIRE',
-            'power'  => 15000.0,
+            'power'  => 15000.00,
+            'skills' => ['fly', 'spell', 'elemental_breath']
+        ]);
+
+        /** @When mapping the Dragon to an array */
+        $actual = $dragon->toArray();
+
+        /** @Then the mapped array should have expected values */
+        $expected = [
+            'name'   => 'Bahamut',
+            'type'   => 'FIRE',
+            'power'  => 15000.00,
             'skills' => ['fly', 'spell', 'elemental_breath']
         ];
 
-        /** @When creating from iterable */
-        $dragon = Dragon::fromIterable(iterable: $data);
+        self::assertSame($expected, $actual);
 
-        /** @Then enums should be reconstructed */
-        $actual = $dragon->toArray();
-        self::assertSame('FIRE', $actual['type']);
-        self::assertSame(['fly', 'spell', 'elemental_breath'], $actual['skills']);
+        /** @And the JSON representation should be the mapped JSON object */
+        self::assertJsonStringEqualsJsonString((string)json_encode($expected), $dragon->toJson());
     }
 
     public function testInvalidEnumValueThrowsException(): void

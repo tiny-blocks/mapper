@@ -4,16 +4,19 @@ declare(strict_types=1);
 
 namespace Test\TinyBlocks\Mapper\Models;
 
-use TinyBlocks\Collection\Collection;
 use TinyBlocks\Mapper\IterableMappability;
 use TinyBlocks\Mapper\IterableMapper;
 
-final class ShippingAddresses extends Collection implements IterableMapper
+final readonly class Products implements IterableMapper
 {
     use IterableMappability;
 
+    public function __construct(public array $items, public Country $country)
+    {
+    }
+
     public function getType(): string
     {
-        return ShippingAddress::class;
+        return Product::class;
     }
 }

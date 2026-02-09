@@ -14,7 +14,6 @@ final readonly class Member implements ObjectMapper
     public function __construct(
         public MemberId $id,
         public string $role,
-        public UserId $userId,
         public bool $isOwner,
         public OrganizationId $organizationId
     ) {

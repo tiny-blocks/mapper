@@ -4,14 +4,8 @@ declare(strict_types=1);
 
 namespace Test\TinyBlocks\Mapper\Models;
 
-use TinyBlocks\Collection\Collection;
-use TinyBlocks\Mapper\IterableMappability;
-use TinyBlocks\Mapper\IterableMapper;
-
-final class Members extends Collection implements IterableMapper
+final class Members extends Collection
 {
-    use IterableMappability;
-
     public function getType(): string
     {
         return Member::class;

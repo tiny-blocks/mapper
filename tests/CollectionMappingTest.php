@@ -4,154 +4,324 @@ declare(strict_types=1);
 
 namespace Test\TinyBlocks\Mapper;
 
+use ArrayIterator;
+use DateTimeImmutable;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Test\TinyBlocks\Mapper\Models\Article;
-use Test\TinyBlocks\Mapper\Models\Merchant;
-use Test\TinyBlocks\Mapper\Models\Store;
-use Test\TinyBlocks\Mapper\Models\Stores;
-use Test\TinyBlocks\Mapper\Models\Team;
+use Test\TinyBlocks\Mapper\Models\Amount;
+use Test\TinyBlocks\Mapper\Models\Articles;
+use Test\TinyBlocks\Mapper\Models\Attributes;
+use Test\TinyBlocks\Mapper\Models\Collection;
+use Test\TinyBlocks\Mapper\Models\Country;
+use Test\TinyBlocks\Mapper\Models\Currency;
+use Test\TinyBlocks\Mapper\Models\Description;
+use Test\TinyBlocks\Mapper\Models\Employee;
+use Test\TinyBlocks\Mapper\Models\Employees;
+use Test\TinyBlocks\Mapper\Models\Member;
+use Test\TinyBlocks\Mapper\Models\MemberId;
+use Test\TinyBlocks\Mapper\Models\Members;
+use Test\TinyBlocks\Mapper\Models\OrganizationId;
+use Test\TinyBlocks\Mapper\Models\Product;
+use Test\TinyBlocks\Mapper\Models\Products;
+use Test\TinyBlocks\Mapper\Models\ProductStatus;
+use Test\TinyBlocks\Mapper\Models\Tag;
+use Test\TinyBlocks\Mapper\Models\Tags;
+use Test\TinyBlocks\Mapper\Models\Uuid;
+use TinyBlocks\Mapper\IterableMapper;
+use TinyBlocks\Mapper\KeyPreservation;
 
 final class CollectionMappingTest extends TestCase
 {
-    public function testNestedCollectionToArray(): void
+    public function testCollectionIsEmpty(): void
     {
-        /** @Given a Merchant with a nested Stores collection */
-        $merchant = new Merchant(
-            id: 'merchant-123',
-            stores: Stores::createFrom(elements: [
-                new Store(id: 'store-1', name: 'Store A', active: true),
-                new Store(id: 'store-2', name: 'Store B', active: false)
-            ])
+        /** @Given an empty Employees collection */
+        $employees = Employees::createFrom(elements: []);
+
+        /** @When mapping the Employees collection to an array */
+        $actual = $employees->toArray();
+
+        /** @Then the mapped array should be empty */
+        self::assertSame([], $actual);
+
+        /** @And the JSON representation should be an empty JSON array */
+        self::assertJsonStringEqualsJsonString('[]', $employees->toJson());
+
+        /** @And the Employees collection should have expected type and count */
+        self::assertSame(0, $employees->count());
+        self::assertSame(Employee::class, $employees->getType());
+    }
+
+    #[DataProvider('collectionOfObjectsProvider')]
+    public function testCollectionOfObjects(string $type, IterableMapper $collection, array $expected): void
+    {
+        /** @Given a Collection of objects */
+        /** @When mapping the collection to an array */
+        $actual = $collection->toArray();
+
+        /** @Then the mapped array should have expected values */
+        self::assertSame($expected, $actual);
+
+        /** @And the JSON representation should be the mapped JSON array */
+        self::assertJsonStringEqualsJsonString((string)json_encode($expected), $collection->toJson());
+
+        /** @And the Collection should have expected type */
+        self::assertSame($type, $collection->getType());
+    }
+
+    public function testCollectionOfScalars(): void
+    {
+        /** @Given an Attributes collection with integer values */
+        $attributes = Attributes::createFrom(elements: [PHP_INT_MAX, 'red', 3.14, true, false, null, ['id' => 1]]);
+
+        /** @When mapping the Attributes collection to an array */
+        $actual = $attributes->toArray();
+
+        /** @Then the mapped array should have expected values */
+        $expected = [PHP_INT_MAX, 'red', 3.14, true, false, null, ['id' => 1]];
+
+        self::assertSame($expected, $actual);
+
+        /** @And the JSON representation should be the mapped JSON array */
+        self::assertJsonStringEqualsJsonString((string)json_encode($expected), $attributes->toJson());
+
+        /** @And the Numbers collection should have expected type and count */
+        self::assertSame(7, $attributes->count());
+        self::assertSame('mixed', $attributes->getType());
+    }
+
+    #[DataProvider('collectionDiscardKeysProvider')]
+    public function testCollectionDiscardKeys(IterableMapper $collection, array $expected): void
+    {
+        /** @Given a Collection with values having keys */
+        /** @When mapping the Collection to an array */
+        $actual = $collection->toArray(keyPreservation: KeyPreservation::DISCARD);
+
+        /** @Then the mapped array should have expected values */
+        self::assertSame($expected, $actual);
+
+        /** @And the JSON representation should be the mapped JSON array */
+        self::assertJsonStringEqualsJsonString(
+            (string)json_encode($expected),
+            $collection->toJson(keyPreservation: KeyPreservation::DISCARD)
         );
-
-        /** @When converting to array */
-        $actual = $merchant->toArray();
-
-        /** @Then the nested collection should be converted */
-        self::assertSame('merchant-123', $actual['id']);
-        self::assertIsArray($actual['stores']);
-        self::assertCount(2, $actual['stores']);
-        self::assertSame([
-            'id'     => 'store-1',
-            'name'   => 'Store A',
-            'active' => true
-        ], $actual['stores'][0]);
-        self::assertSame([
-            'id'     => 'store-2',
-            'name'   => 'Store B',
-            'active' => false
-        ], $actual['stores'][1]);
     }
 
-    public function testEmptyNestedCollection(): void
+    public function testCollectionGetTypeReturnsOwnClass(): void
     {
-        /** @Given a Merchant with an empty Stores collection */
-        $merchant = new Merchant(
-            id: 'merchant-empty',
-            stores: Stores::createFrom(elements: [])
-        );
+        /** @Given a Collection with arrays */
+        $collection = Collection::createFrom(elements: [['id' => 1], ['id' => 2]]);
 
-        /** @When converting to array */
-        $actual = $merchant->toArray();
+        /** @When mapping the Collection to an array */
+        $actual = $collection->toArray();
 
-        /** @Then stores should be an empty array */
-        self::assertSame([], $actual['stores']);
-    }
+        /** @Then the mapped array should have expected values */
+        $expected = [['id' => 1], ['id' => 2]];
 
-    public function testCollectionIsIterable(): void
-    {
-        /** @Given a Stores collection with elements */
-        $stores = Stores::createFrom(elements: [
-            new Store(id: 's1', name: 'A', active: true),
-            new Store(id: 's2', name: 'B', active: true)
-        ]);
+        self::assertSame($expected, $actual);
 
-        /** @When iterating over the collection */
-        $count = 0;
-        foreach ($stores as $store) {
-            $count++;
-            self::assertInstanceOf(Store::class, $store);
-        }
-
-        /** @Then the count should match the number of elements */
-        self::assertSame(2, $count);
-        self::assertSame(2, $stores->count());
-    }
-
-    public function testNestedCollectionFromIterable(): void
-    {
-        /** @Given data for a Merchant with Store objects */
-        $data = [
-            'id'     => 'merchant-456',
-            'stores' => [
-                new Store(id: 'store-a', name: 'Alpha', active: true),
-                new Store(id: 'store-b', name: 'Beta', active: false)
-            ]
-        ];
-
-        /** @When creating from iterable */
-        $merchant = Merchant::fromIterable(iterable: $data);
-
-        /** @Then the Merchant should contain the Stores collection */
-        $actual = $merchant->toArray();
-
-        self::assertSame('merchant-456', $actual['id']);
-        self::assertCount(2, $actual['stores']);
-        self::assertSame('store-a', $actual['stores'][0]['id']);
-        self::assertSame('store-b', $actual['stores'][1]['id']);
-    }
-
-    public function testCollectionWithDefaultValuesOnElements(): void
-    {
-        /** @Given a Team with employees where some have missing optional properties */
-        $data = [
-            'id'        => 'team-1',
-            'employees' => [
-                ['name' => 'Alice', 'department' => 'engineering', 'active' => true],
-                ['name' => 'Bob']
-            ]
-        ];
-
-        /** @When creating Team from iterable */
-        $team = Team::fromIterable(iterable: $data);
-
-        /** @Then defaults should be applied to missing properties */
-        $actual = $team->toArray();
-
-        self::assertSame('team-1', $actual['id']);
-        self::assertCount(2, $actual['employees']);
-
-        self::assertSame('Alice', $actual['employees'][0]['name']);
-        self::assertSame('engineering', $actual['employees'][0]['department']);
-        self::assertTrue($actual['employees'][0]['active']);
-
-        self::assertSame('Bob', $actual['employees'][1]['name']);
-        self::assertSame('general', $actual['employees'][1]['department']);
-        self::assertTrue($actual['employees'][1]['active']);
+        /** @And the JSON representation should be the mapped JSON array */
+        self::assertJsonStringEqualsJsonString((string)json_encode($expected), $collection->toJson());
     }
 
     public function testCollectionWithNoConstructorElements(): void
     {
-        /** @Given an Article with Tags whose element type has no constructor */
-        $data = [
-            'title' => 'My Article',
-            'tags'  => [
-                ['name' => 'php', 'color' => 'blue'],
-                ['name' => 'testing', 'color' => 'green']
+        /** @Given a Tags collection with a default Tag object */
+        $tags = Tags::createFrom(elements: [new Tag()]);
+
+        /** @When mapping the Tags collection to an array */
+        $actual = $tags->toArray();
+
+        /** @Then the mapped array should have expected values */
+        $expected = [['name' => '', 'color' => 'gray']];
+
+        self::assertSame($expected, $actual);
+
+        /** @And the JSON representation should be the mapped JSON array */
+        self::assertJsonStringEqualsJsonString((string)json_encode($expected), $tags->toJson());
+
+        /** @And the Tags collection should have expected type and count */
+        self::assertSame(1, $tags->count());
+        self::assertSame(Tag::class, $tags->getType());
+    }
+
+    public static function collectionOfObjectsProvider(): iterable
+    {
+        return [
+            'Members collection'   => [
+                'type'       => Member::class,
+                'collection' => Members::createFrom(elements: [
+                    new Member(
+                        id: new MemberId(value: new Uuid(value: '88f15d3f-c9b9-4855-9778-5ba7926b6736')),
+                        role: 'owner',
+                        isOwner: true,
+                        organizationId: new OrganizationId(
+                            value: new Uuid(value: 'dc0dbdfd-9f8d-43c9-a000-19bcc989d20a23')
+                        )
+                    ),
+                    new Member(
+                        id: new MemberId(value: new Uuid(value: 'c23b4c0a-f6d1-4b02-af2a-28b120a0ceb6')),
+                        role: 'admin',
+                        isOwner: false,
+                        organizationId: new OrganizationId(
+                            value: new Uuid(value: 'dc0dbdfd-9f8d-43c9-a000-19bcc989d20a23')
+                        )
+                    )
+                ]),
+                'expected'   => [
+                    [
+                        'id'             => '88f15d3f-c9b9-4855-9778-5ba7926b6736',
+                        'role'           => 'owner',
+                        'isOwner'        => true,
+                        'organizationId' => 'dc0dbdfd-9f8d-43c9-a000-19bcc989d20a23'
+                    ],
+                    [
+                        'id'             => 'c23b4c0a-f6d1-4b02-af2a-28b120a0ceb6',
+                        'role'           => 'admin',
+                        'isOwner'        => false,
+                        'organizationId' => 'dc0dbdfd-9f8d-43c9-a000-19bcc989d20a23'
+                    ]
+                ]
+            ],
+            'Articles collection'  => [
+                'type'       => Articles::class,
+                'collection' => Articles::createFrom(elements: [
+                    ['id' => 1, 'title' => 'First Article'],
+                    ['id' => 2, 'title' => 'Second Article']
+                ]),
+                'expected'   => [
+                    ['id' => 1, 'title' => 'First Article'],
+                    ['id' => 2, 'title' => 'Second Article']
+                ]
+            ],
+            'Products collection'  => [
+                'type'       => Product::class,
+                'collection' => new Products(
+                    items: [
+                        new Product(
+                            id: 1,
+                            amount: Amount::from(value: 99.99, currency: Currency::USD),
+                            description: new Description(text: 'A high-quality product'),
+                            attributes: new ArrayIterator([
+                                'color'   => 'red',
+                                'size'    => 'M',
+                                'inStock' => true
+                            ]),
+                            inventory: ['stock' => 100, 'warehouse' => 'A1'],
+                            status: ProductStatus::ACTIVE,
+                            createdAt: new DateTimeImmutable('2026-01-01T10:00:00+00:00')
+                        ),
+                        new Product(
+                            id: 2,
+                            amount: Amount::from(value: 149.99, currency: Currency::USD),
+                            description: new Description(text: 'A premium product'),
+                            attributes: new ArrayIterator([
+                                'color'   => 'blue',
+                                'size'    => 'L',
+                                'inStock' => false
+                            ]),
+                            inventory: ['stock' => 0, 'warehouse' => 'B2'],
+                            status: ProductStatus::INACTIVE,
+                            createdAt: new DateTimeImmutable('2026-01-01T10:00:00+00:00')
+                        )
+                    ],
+                    country: Country::UNITED_STATES
+                ),
+                'expected'   => [
+                    [
+                        'id'          => 1,
+                        'amount'      => [
+                            'value'    => 99.99,
+                            'currency' => 'USD'
+                        ],
+                        'description' => 'A high-quality product',
+                        'attributes'  => [
+                            'color'   => 'red',
+                            'size'    => 'M',
+                            'inStock' => true
+                        ],
+                        'inventory'   => ['stock' => 100, 'warehouse' => 'A1'],
+                        'status'      => 1,
+                        'createdAt'   => '2026-01-01T10:00:00+00:00'
+                    ],
+                    [
+                        'id'          => 2,
+                        'amount'      => [
+                            'value'    => 149.99,
+                            'currency' => 'USD'
+                        ],
+                        'description' => 'A premium product',
+                        'attributes'  => [
+                            'color'   => 'blue',
+                            'size'    => 'L',
+                            'inStock' => false
+                        ],
+                        'inventory'   => ['stock' => 0, 'warehouse' => 'B2'],
+                        'status'      => 2,
+                        'createdAt'   => '2026-01-01T10:00:00+00:00'
+                    ]
+                ]
+            ],
+            'Employees collection' => [
+                'type'       => Employee::class,
+                'collection' => Employees::createFrom(elements: [
+                    new Employee(name: 'Anne'),
+                    new Employee(name: 'Gustavo', department: 'Technology'),
+                    new Employee(name: 'John', department: 'Marketing', active: false)
+                ]),
+                'expected'   => [
+                    ['name' => 'Anne', 'department' => 'general', 'active' => true],
+                    ['name' => 'Gustavo', 'department' => 'Technology', 'active' => true],
+                    ['name' => 'John', 'department' => 'Marketing', 'active' => false]
+                ]
             ]
         ];
+    }
 
-        /** @When creating Article from iterable */
-        $article = Article::fromIterable(iterable: $data);
-
-        /** @Then Tag elements should have default values since Tag has no constructor */
-        $actual = $article->toArray();
-
-        self::assertSame('My Article', $actual['title']);
-        self::assertCount(2, $actual['tags']);
-        self::assertSame('', $actual['tags'][0]['name']);
-        self::assertSame('gray', $actual['tags'][0]['color']);
-        self::assertSame('', $actual['tags'][1]['name']);
-        self::assertSame('gray', $actual['tags'][1]['color']);
+    public static function collectionDiscardKeysProvider(): iterable
+    {
+        return [
+            'Collection with string keys'             => [
+                'collection' => Collection::createFrom(elements: [
+                    ['id' => 1, 'name' => 'Gustavo'],
+                    ['id' => 2, 'name' => 'Anne']
+                ]),
+                'expected'   => [
+                    [1, 'Gustavo'],
+                    [2, 'Anne']
+                ]
+            ],
+            'Collection with integer keys'            => [
+                'collection' => Collection::createFrom(elements: [
+                    10 => 'first',
+                    20 => 'second',
+                    30 => 'third'
+                ]),
+                'expected'   => [
+                    'first',
+                    'second',
+                    'third'
+                ]
+            ],
+            'Collection of objects with string keys'  => [
+                'collection' => Collection::createFrom(elements: [
+                    'gustavo' => new MemberId(value: new Uuid(value: '88f15d3f-c9b9-4855-9778-5ba7926b6736')),
+                    'anne'    => new MemberId(value: new Uuid(value: 'c23b4c0a-f6d1-4b02-af2a-28b120a0ceb6'))
+                ]),
+                'expected'   => [
+                    '88f15d3f-c9b9-4855-9778-5ba7926b6736',
+                    'c23b4c0a-f6d1-4b02-af2a-28b120a0ceb6'
+                ]
+            ],
+            'Collection of objects with integer keys' => [
+                'collection' => Collection::createFrom(elements: [
+                    100 => new Uuid(value: '88f15d3f-c9b9-4855-9778-5ba7926b6736'),
+                    200 => new Uuid(value: 'c23b4c0a-f6d1-4b02-af2a-28b120a0ceb6')
+                ]),
+                'expected'   => [
+                    '88f15d3f-c9b9-4855-9778-5ba7926b6736',
+                    'c23b4c0a-f6d1-4b02-af2a-28b120a0ceb6'
+                ]
+            ]
+        ];
     }
 }
