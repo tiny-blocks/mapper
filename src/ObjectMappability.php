@@ -4,30 +4,18 @@ declare(strict_types=1);
 
 namespace TinyBlocks\Mapper;
 
-use TinyBlocks\Mapper\Internal\Mappers\Collection\ArrayMapper;
-use TinyBlocks\Mapper\Internal\Mappers\Json\JsonMapper;
-use TinyBlocks\Mapper\Internal\Mappers\Object\ObjectMapper;
+use TinyBlocks\Mapper\Internal\Builders\ObjectBuilder;
+use TinyBlocks\Mapper\Internal\Extractors\ReflectionExtractor;
+use TinyBlocks\Mapper\Internal\MappabilityBehavior;
 
 trait ObjectMappability
 {
+    use MappabilityBehavior;
+
     public static function fromIterable(iterable $iterable): static
     {
-        $mapper = new ObjectMapper();
+        $extractor = new ReflectionExtractor();
 
-        return $mapper->map(iterable: $iterable, class: static::class);
-    }
-
-    public function toJson(KeyPreservation $keyPreservation = KeyPreservation::PRESERVE): string
-    {
-        $mapper = new JsonMapper();
-
-        return $mapper->map(value: $this->toArray(keyPreservation: $keyPreservation));
-    }
-
-    public function toArray(KeyPreservation $keyPreservation = KeyPreservation::PRESERVE): array
-    {
-        $mapper = new ArrayMapper();
-
-        return $mapper->map(value: $this, keyPreservation: $keyPreservation);
+        return new ObjectBuilder(extractor: $extractor)->build(iterable: $iterable, class: static::class);
     }
 }

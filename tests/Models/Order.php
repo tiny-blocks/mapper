@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace TinyBlocks\Mapper\Models;
+namespace Test\TinyBlocks\Mapper\Models;
 
 use DateTimeImmutable;
 use Generator;
@@ -13,7 +13,7 @@ final readonly class Order implements ObjectMapper
 {
     use ObjectMappability;
 
-    public function __construct(public string $id, public Generator $items, public DateTimeImmutable $createdAt)
+    public function __construct(public Uuid $id, public Generator $items, public DateTimeImmutable $createdAt)
     {
     }
 }

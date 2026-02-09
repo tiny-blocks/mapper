@@ -4,11 +4,11 @@ parameters:
   level: 9
   tmpDir: report/phpstan
   ignoreErrors:
-    - '#method#'
-    - '#expects#'
-    - '#should return#'
+    - '#T of#'
+    - '#mixed#'
+    - '#UnitEnum#'
+    - '#Reflection#'
+    - '#Traversable#'
     - '#is used zero times#'
-    - '#type mixed supplied#'
-    - '#not specify its types#'
-    - '#no value type specified#'
+    - '#type specified in iterable type#'
   reportUnmatchedIgnoredErrors: false

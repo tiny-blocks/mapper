@@ -8,7 +8,6 @@ permissions:
 
 env:
   PHP_VERSION: '8.5'
-  COMPOSER_ROOT_VERSION: '1.2.0'
 
 jobs:
   build:
@@ -23,7 +22,6 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ env.PHP_VERSION }}
-          extensions: bcmath
           tools: composer:2
 
       - name: Validate composer.json
@@ -53,7 +51,6 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ env.PHP_VERSION }}
-          extensions: bcmath
           tools: composer:2
 
       - name: Download vendor artifact from build
@@ -78,7 +75,6 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ env.PHP_VERSION }}
-          extensions: bcmath
           tools: composer:2
 
       - name: Download vendor artifact from build
