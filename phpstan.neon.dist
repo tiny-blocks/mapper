@@ -6,11 +6,9 @@ parameters:
   ignoreErrors:
     - '#T of#'
     - '#mixed#'
-    - '#template type#'
-    - '#ReflectionType#'
-    - '#generic interface#'
+    - '#UnitEnum#'
+    - '#Reflection#'
+    - '#Traversable#'
     - '#is used zero times#'
-    - '#expects class-string#'
-    - '#value type specified#'
-    - '#not specify its types: T#'
+    - '#type specified in iterable type#'
   reportUnmatchedIgnoredErrors: false
