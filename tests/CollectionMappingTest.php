@@ -17,6 +17,9 @@ use Test\TinyBlocks\Mapper\Models\Currency;
 use Test\TinyBlocks\Mapper\Models\Description;
 use Test\TinyBlocks\Mapper\Models\Employee;
 use Test\TinyBlocks\Mapper\Models\Employees;
+use Test\TinyBlocks\Mapper\Models\Invoice;
+use Test\TinyBlocks\Mapper\Models\Invoices;
+use Test\TinyBlocks\Mapper\Models\InvoiceSummaries;
 use Test\TinyBlocks\Mapper\Models\Member;
 use Test\TinyBlocks\Mapper\Models\MemberId;
 use Test\TinyBlocks\Mapper\Models\Members;
@@ -87,6 +90,30 @@ final class CollectionMappingTest extends TestCase
         /** @And the Numbers collection should have expected type and count */
         self::assertSame(7, $attributes->count());
         self::assertSame('mixed', $attributes->getType());
+    }
+
+    public function testCollectionOfTraversable(): void
+    {
+        /** @Given an InvoiceSummaries collection with traversable invoices */
+        $invoiceSummaries = InvoiceSummaries::createFrom(
+            invoices: Invoices::createFrom(elements: [
+                new Invoice(id: 'INV001', amount: 100.0, customer: 'Customer A'),
+                new Invoice(id: 'INV002', amount: 150.5, customer: 'Customer B'),
+                new Invoice(id: 'INV003', amount: 200.75, customer: 'Customer C')
+            ])
+        );
+
+        /** @When mapping the InvoiceSummaries collection to an array */
+        $actual = $invoiceSummaries->toArray();
+
+        /** @Then the mapped array should have expected values */
+        $expected = [
+            'INV001' => ['id' => 'INV001', 'amount' => 100.0, 'customer' => 'Customer A'],
+            'INV002' => ['id' => 'INV002', 'amount' => 150.5, 'customer' => 'Customer B'],
+            'INV003' => ['id' => 'INV003', 'amount' => 200.75, 'customer' => 'Customer C']
+        ];
+
+        self::assertSame($expected, $actual);
     }
 
     #[DataProvider('collectionDiscardKeysProvider')]

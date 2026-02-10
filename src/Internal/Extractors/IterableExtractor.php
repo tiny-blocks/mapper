@@ -14,6 +14,10 @@ final readonly class IterableExtractor implements PropertyExtractor
 
     public function extract(object $object): array
     {
+        if ($object instanceof Traversable) {
+            return iterator_to_array($object);
+        }
+
         $properties = $this->extractor->extractProperties(object: $object);
 
         $candidates = array_filter(
