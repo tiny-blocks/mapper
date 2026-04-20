@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace TinyBlocks\Mapper\Internal\Mappers\Object\Casters;
 
-use ReflectionEnum;
-use ReflectionEnumBackedCase;
+use BackedEnum;
 use TinyBlocks\Mapper\Internal\Exceptions\InvalidCast;
 use UnitEnum;
 
@@ -21,17 +20,14 @@ final readonly class EnumCaster implements Caster
             return $value;
         }
 
-        $reflection = new ReflectionEnum(objectOrClass: $this->class);
+        if (is_subclass_of($this->class, BackedEnum::class)) {
+            return ($this->class)::tryFrom($value)
+                ?? throw InvalidCast::forEnumValue(value: $value, class: $this->class);
+        }
 
-        foreach ($reflection->getCases() as $case) {
-            $caseInstance = $case->getValue();
-
-            if ($case instanceof ReflectionEnumBackedCase && $case->getBackingValue() === $value) {
-                return $caseInstance;
-            }
-
-            if ($caseInstance->name === $value) {
-                return $caseInstance;
+        foreach (($this->class)::cases() as $case) {
+            if ($case->name === $value) {
+                return $case;
             }
         }
 

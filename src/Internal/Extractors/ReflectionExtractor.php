@@ -25,8 +25,7 @@ final readonly class ReflectionExtractor
                 continue;
             }
 
-            $name = $property->getName();
-            $extracted[$name] = $property->getValue(object: $object);
+            $extracted[$property->getName()] = $property->getValue(object: $object);
         }
 
         return $extracted;
@@ -37,7 +36,7 @@ final readonly class ReflectionExtractor
         $reflection = new ReflectionClass(objectOrClass: $class);
         $constructor = $reflection->getConstructor();
 
-        if ($constructor === null) {
+        if (is_null($constructor)) {
             return [];
         }
 

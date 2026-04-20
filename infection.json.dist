@@ -17,7 +17,8 @@
     },
     "mutators": {
         "@default": true,
-        "PublicVisibility": false
+        "PublicVisibility": false,
+        "ProtectedVisibility": false
     },
     "minCoveredMsi": 100,
     "testFramework": "phpunit"
