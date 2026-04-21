@@ -9,7 +9,7 @@ use ReflectionException;
 use ReflectionMethod;
 use ReflectionParameter;
 use TinyBlocks\Mapper\Internal\Extractors\ReflectionExtractor;
-use TinyBlocks\Mapper\Internal\Mappers\Object\Casters\CasterHandler;
+use TinyBlocks\Mapper\Internal\Mappers\Object\Casters\CasterResolver;
 
 final readonly class ObjectBuilder
 {
@@ -44,11 +44,20 @@ final readonly class ObjectBuilder
         /** @var ReflectionParameter $parameter */
         foreach ($parameters as $parameter) {
             $name = $parameter->getName();
-            $value = $inputProperties[$name] ?? null;
 
-            $arguments[] = $value !== null
-                ? $this->castValue(parameter: $parameter, value: $value)
-                : $this->getDefaultValue(parameter: $parameter);
+            if (!array_key_exists($name, $inputProperties)) {
+                $arguments[] = $this->getDefaultValue(parameter: $parameter);
+                continue;
+            }
+
+            $value = $inputProperties[$name];
+
+            if (is_null($value)) {
+                $arguments[] = null;
+                continue;
+            }
+
+            $arguments[] = $this->castValue(parameter: $parameter, value: $value);
         }
 
         return $arguments;
@@ -56,7 +65,7 @@ final readonly class ObjectBuilder
 
     protected function castValue(ReflectionParameter $parameter, mixed $value): mixed
     {
-        $caster = new CasterHandler(parameter: $parameter);
+        $caster = new CasterResolver(parameter: $parameter);
         return $caster->castValue(value: $value);
     }
 

@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Test\TinyBlocks\Mapper;
 
 use PHPUnit\Framework\TestCase;
+use Test\TinyBlocks\Mapper\Models\Alert;
 use Test\TinyBlocks\Mapper\Models\Amount;
 use Test\TinyBlocks\Mapper\Models\Dragon;
 use Test\TinyBlocks\Mapper\Models\DragonSkills;
 use Test\TinyBlocks\Mapper\Models\DragonType;
+use Test\TinyBlocks\Mapper\Models\Severity;
 use Test\TinyBlocks\Mapper\Models\Task;
 use TinyBlocks\Mapper\Internal\Exceptions\InvalidCast;
 
@@ -109,5 +111,25 @@ final class EnumMappingTest extends TestCase
 
         /** @When creating from iterable */
         Amount::fromIterable(iterable: $data);
+    }
+
+    public function testPureEnumRoundTripsByCaseName(): void
+    {
+        /** @Given an Alert fixture whose Severity is an unbacked (pure) enum */
+        /** @When creating the Alert from an iterable with a case name */
+        $alert = Alert::fromIterable(iterable: ['severity' => 'WARNING']);
+
+        /** @Then the case name should resolve to the matching Severity case */
+        self::assertSame(Severity::WARNING, $alert->severity);
+    }
+
+    public function testPureEnumWhenInvalidCaseName(): void
+    {
+        /** @Then an invalid cast exception should be thrown */
+        $this->expectException(InvalidCast::class);
+        $this->expectExceptionMessage('Invalid value <UNKNOWN> for enum <Test\TinyBlocks\Mapper\Models\Severity>.');
+
+        /** @When mapping an Alert with a case name that does not exist */
+        Alert::fromIterable(iterable: ['severity' => 'UNKNOWN']);
     }
 }

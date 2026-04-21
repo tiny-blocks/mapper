@@ -12,8 +12,9 @@
 
 ## Overview
 
-Allows mapping data between different formats, such as JSON, arrays, and DTOs, providing flexibility in transforming and
-serializing information.
+Maps PHP objects to and from arrays, JSON, and iterables through reflection and pluggable strategies. Handles enums,
+value objects, nested objects, date-time types, and collections out of the box. Designed for DTO hydration,
+serialization at the HTTP boundary, and data transfer between bounded contexts.
 
 <div id='installation'></div>
 

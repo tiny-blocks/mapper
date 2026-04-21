@@ -16,13 +16,16 @@ use Test\TinyBlocks\Mapper\Models\Configuration;
 use Test\TinyBlocks\Mapper\Models\Currency;
 use Test\TinyBlocks\Mapper\Models\Description;
 use Test\TinyBlocks\Mapper\Models\Employee;
+use Test\TinyBlocks\Mapper\Models\HybridValue;
 use Test\TinyBlocks\Mapper\Models\Inventory;
 use Test\TinyBlocks\Mapper\Models\Member;
 use Test\TinyBlocks\Mapper\Models\MemberId;
 use Test\TinyBlocks\Mapper\Models\Members;
+use Test\TinyBlocks\Mapper\Models\NullableName;
 use Test\TinyBlocks\Mapper\Models\Order;
 use Test\TinyBlocks\Mapper\Models\Organization;
 use Test\TinyBlocks\Mapper\Models\OrganizationId;
+use Test\TinyBlocks\Mapper\Models\Pair;
 use Test\TinyBlocks\Mapper\Models\Product;
 use Test\TinyBlocks\Mapper\Models\ProductStatus;
 use Test\TinyBlocks\Mapper\Models\Service;
@@ -260,6 +263,47 @@ final class ObjectMappingTest extends TestCase
 
         /** @Then the mapped JSON should have expected values */
         self::assertJsonStringEqualsJsonString((string)json_encode($expected), $actual);
+    }
+
+    public function testObjectWithUnionTypedParameterPassesValueThroughWithoutCasting(): void
+    {
+        /** @Given a HybridValue fixture with an int|string union typed parameter */
+        /** @When mapping with an integer value */
+        $hybrid = HybridValue::fromIterable(iterable: ['value' => 42]);
+
+        /** @Then the value should be preserved verbatim without any cast */
+        self::assertSame(42, $hybrid->value);
+    }
+
+    public function testObjectWithExplicitNullPreservesNullOverDefault(): void
+    {
+        /** @Given a NullableName parameter that has a default value and accepts null */
+        /** @When mapping with an explicit null */
+        $name = NullableName::fromIterable(iterable: ['value' => null]);
+
+        /** @Then the explicit null must be preserved and not replaced by the default */
+        self::assertNull($name->value);
+    }
+
+    public function testObjectFallsBackToDefaultWhenKeyIsMissing(): void
+    {
+        /** @Given a NullableName parameter that has a default value */
+        /** @When mapping with no entry for the parameter */
+        $name = NullableName::fromIterable(iterable: []);
+
+        /** @Then the default value must be applied because the key is absent */
+        self::assertSame('default-name', $name->value);
+    }
+
+    public function testObjectContinuesIteratingParametersAfterNullValue(): void
+    {
+        /** @Given a Pair whose first parameter is null and second is populated */
+        /** @When mapping the Pair */
+        $pair = Pair::fromIterable(iterable: ['first' => null, 'second' => 'second-value']);
+
+        /** @Then both parameters should be resolved, confirming the loop continues past null */
+        self::assertNull($pair->first);
+        self::assertSame('second-value', $pair->second);
     }
 
     public static function objectProvider(): array
