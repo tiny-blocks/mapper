@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Test\TinyBlocks\Mapper;
+namespace Test\TinyBlocks\Mapper\Unit;
 
 use ArrayIterator;
 use DateTimeImmutable;
@@ -38,12 +38,9 @@ use TinyBlocks\Mapper\ObjectMapper;
 final class ObjectMappingTest extends TestCase
 {
     #[DataProvider('objectProvider')]
-    public function testObject(string $class, iterable $iterable, array $expected): void
+    public function testObject(ObjectMapper $object, array $expected): void
     {
-        /** @Given an Object */
-        /** @var ObjectMapper $class */
-        $object = $class::fromIterable(iterable: $iterable);
-
+        /** @Given an ObjectMapper bound by the provider */
         /** @When mapping the object to an array */
         $actual = $object->toArray();
 
@@ -57,23 +54,43 @@ final class ObjectMappingTest extends TestCase
         self::assertJsonStringEqualsJsonString((string)json_encode($expected), $actual);
     }
 
-    public function testObjectWithGenerator(): void
+    public function testObjectWithGeneratorMapsToArray(): void
     {
-        /** @Given an Order with a Generator of items */
+        /** @Given a generator yielding three order items */
+        $items = (function (): Generator {
+            yield ['sku' => 'ITEM-001', 'quantity' => 2];
+            yield ['sku' => 'ITEM-002', 'quantity' => 1];
+            yield ['sku' => 'ITEM-003', 'quantity' => 5];
+        })();
+
+        /** @And an order built from the generator with an id and timestamp */
         $order = new Order(
             id: new Uuid(value: '123e4567-e89b-12d3-a456-426614174000'),
-            items: (function (): Generator {
-                yield ['sku' => 'ITEM-001', 'quantity' => 2];
-                yield ['sku' => 'ITEM-002', 'quantity' => 1];
-                yield ['sku' => 'ITEM-003', 'quantity' => 5];
-            })(),
+            items: $items,
             createdAt: new DateTimeImmutable('2025-01-01 10:00:00', new DateTimeZone('UTC'))
         );
 
-        /** @When mapping the Order to an array */
+        /** @When the order is mapped to an array */
         $actual = $order->toArray();
 
-        /** @Then the mapped array should have expected values */
+        /** @Then the array carries every item in iteration order alongside the id and createdAt */
+        self::assertSame(
+            [
+                'id'        => '123e4567-e89b-12d3-a456-426614174000',
+                'items'     => [
+                    ['sku' => 'ITEM-001', 'quantity' => 2],
+                    ['sku' => 'ITEM-002', 'quantity' => 1],
+                    ['sku' => 'ITEM-003', 'quantity' => 5]
+                ],
+                'createdAt' => '2025-01-01T10:00:00+00:00'
+            ],
+            $actual
+        );
+    }
+
+    public function testOrderRoundTripsFromIterableToJson(): void
+    {
+        /** @Given an iterable representation of an order with array items */
         $expected = [
             'id'        => '123e4567-e89b-12d3-a456-426614174000',
             'items'     => [
@@ -84,13 +101,13 @@ final class ObjectMappingTest extends TestCase
             'createdAt' => '2025-01-01T10:00:00+00:00'
         ];
 
-        self::assertSame($expected, $actual);
-
-        /** @And when mapping the Order to JSON */
+        /** @And an order rebuilt from the iterable via the static factory */
         $order = Order::fromIterable(iterable: $expected);
+
+        /** @When the order is mapped to JSON */
         $actual = $order->toJson();
 
-        /** @Then the mapped JSON should have expected values */
+        /** @Then the JSON payload carries every item in iteration order alongside the id and createdAt */
         self::assertJsonStringEqualsJsonString((string)json_encode($expected), $actual);
     }
 
@@ -115,7 +132,11 @@ final class ObjectMappingTest extends TestCase
     {
         /** @Given a Webhook with no constructor */
         $webhook = new Webhook();
+
+        /** @And a URL assigned to the Webhook */
         $webhook->url = 'https://example.com/hook';
+
+        /** @And the Webhook marked active */
         $webhook->active = true;
 
         /** @When mapping the Webhook to an array */
@@ -138,10 +159,16 @@ final class ObjectMappingTest extends TestCase
 
     public function testObjectWithStaticProperties(): void
     {
-        /** @Given a Webhook with no constructor and static properties */
+        /** @Given a Webhook with no constructor */
         $webhook = new Webhook();
+
+        /** @And a URL assigned to the Webhook */
         $webhook->url = 'https://example.com/static-test';
+
+        /** @And the Webhook marked active */
         $webhook->active = true;
+
+        /** @And a static timeout configured on the class */
         Webhook::$timeout = 60;
 
         /** @When mapping the Webhook to an array */
@@ -195,8 +222,8 @@ final class ObjectMappingTest extends TestCase
 
         /** @Then the mapped array should have expected values */
         $expected = [
-            'id'      => [42,],
-            'options' => ['single-option'],
+            'id'      => [42],
+            'options' => ['single-option']
         ];
 
         self::assertSame($expected, $actual);
@@ -306,42 +333,62 @@ final class ObjectMappingTest extends TestCase
         self::assertSame('second-value', $pair->second);
     }
 
+    public function testFromIterableHydratesClassWithoutConstructor(): void
+    {
+        /** @Given an iterable with values that do not correspond to constructor parameters */
+        $iterable = ['url' => 'https://example.com/hook', 'active' => true];
+
+        /** @When the Webhook (which has no constructor) is hydrated from the iterable */
+        $webhook = Webhook::fromIterable(iterable: $iterable);
+
+        /** @Then the instance is created with its declared default property values */
+        self::assertSame('', $webhook->url);
+        self::assertFalse($webhook->active);
+    }
+
+    public function testObjectFallsBackToNullWhenKeyIsMissingAndNoDefaultExists(): void
+    {
+        /** @Given a Pair whose nullable first parameter has no default and no entry in the iterable */
+        /** @When the Pair is hydrated with only the second parameter */
+        $pair = Pair::fromIterable(iterable: ['second' => 'second-value']);
+
+        /** @Then the missing parameter is populated with null and the provided one carries through */
+        self::assertNull($pair->first);
+        self::assertSame('second-value', $pair->second);
+    }
+
     public static function objectProvider(): array
     {
         return [
             'Tag object'          => [
-                'class'    => Tag::class,
-                'iterable' => [],
+                'object'   => Tag::fromIterable(iterable: []),
                 'expected' => [
                     'name'  => '',
                     'color' => 'gray'
                 ]
             ],
             'Member object'       => [
-                'class'    => Member::class,
-                'iterable' => [
+                'object'   => Member::fromIterable(iterable: [
                     'id'             => new MemberId(value: new Uuid(value: '88f15d3f-c9b9-4855-9778-5ba7926b6736')),
                     'role'           => 'owner',
                     'isOwner'        => true,
                     'organizationId' => new OrganizationId(
                         value: new Uuid(value: 'dc0dbdfd-9f8d-43c9-a000-19bcc989d20a23')
                     )
-                ],
+                ]),
                 'expected' => [
                     'id'             => '88f15d3f-c9b9-4855-9778-5ba7926b6736',
                     'role'           => 'owner',
                     'isOwner'        => true,
                     'organizationId' => 'dc0dbdfd-9f8d-43c9-a000-19bcc989d20a23'
-                ],
+                ]
             ],
             'Service object'      => [
-                'class'    => Service::class,
-                'iterable' => ['action' => static fn() => 'executed'],
+                'object'   => Service::fromIterable(iterable: ['action' => static fn() => 'executed']),
                 'expected' => ['action' => []]
             ],
             'Product object'      => [
-                'class'    => Product::class,
-                'iterable' => [
+                'object'   => Product::fromIterable(iterable: [
                     'id'          => 1,
                     'amount'      => Amount::from(value: 99.99, currency: Currency::USD),
                     'description' => new Description(text: 'A high-quality product'),
@@ -353,7 +400,7 @@ final class ObjectMappingTest extends TestCase
                     'inventory'   => ['stock' => 100, 'warehouse' => 'A1'],
                     'status'      => ProductStatus::ACTIVE,
                     'createdAt'   => new DateTimeImmutable('2026-01-01T10:00:00+00:00')
-                ],
+                ]),
                 'expected' => [
                     'id'          => 1,
                     'amount'      => ['value' => 99.99, 'currency' => 'USD'],
@@ -362,23 +409,21 @@ final class ObjectMappingTest extends TestCase
                     'inventory'   => ['stock' => 100, 'warehouse' => 'A1'],
                     'status'      => 1,
                     'createdAt'   => '2026-01-01T10:00:00+00:00'
-                ],
+                ]
             ],
             'Employee object'     => [
-                'class'    => Employee::class,
-                'iterable' => [
+                'object'   => Employee::fromIterable(iterable: [
                     'name'   => 'John',
                     'active' => false
-                ],
+                ]),
                 'expected' => [
                     'name'       => 'John',
                     'department' => 'general',
                     'active'     => false
-                ],
+                ]
             ],
             'Organization object' => [
-                'class'    => Organization::class,
-                'iterable' => [
+                'object'   => Organization::fromIterable(iterable: [
                     'id'          => new OrganizationId(
                         value: new Uuid(value: 'dc0dbdfd-9f8d-43c9-a000-19bcc989d20a23')
                     ),
@@ -402,7 +447,7 @@ final class ObjectMappingTest extends TestCase
                         )
                     ]),
                     'invitations' => []
-                ],
+                ]),
                 'expected' => [
                     'id'          => 'dc0dbdfd-9f8d-43c9-a000-19bcc989d20a23',
                     'name'        => 'Tech Corp',

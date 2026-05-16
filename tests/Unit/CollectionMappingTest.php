@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Test\TinyBlocks\Mapper;
+namespace Test\TinyBlocks\Mapper\Unit;
 
 use ArrayIterator;
 use DateTimeImmutable;
