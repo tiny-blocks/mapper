@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace TinyBlocks\Mapper;
 
-use TinyBlocks\Mapper\Internal\Exceptions\InvalidCast;
+use TinyBlocks\Mapper\Exceptions\InvalidCast;
 
 /**
  * Defines methods for converting objects or collections of objects to JSON, arrays,

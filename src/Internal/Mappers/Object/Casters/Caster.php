@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace TinyBlocks\Mapper\Internal\Mappers\Object\Casters;
 
-use TinyBlocks\Mapper\Internal\Exceptions\InvalidCast;
+use TinyBlocks\Mapper\Exceptions\InvalidCast;
 
 /**
  * Responsible for applying a cast to values, based on a specific type.
