@@ -5,6 +5,9 @@
     "type": "library",
     "keywords": [
         "dto",
+        "json",
+        "array",
+        "object",
         "mapper",
         "hydration",
         "tiny-blocks",
