@@ -1,14 +1,54 @@
 parameters:
-  paths:
-    - src
-  level: 9
-  tmpDir: report/phpstan
-  ignoreErrors:
-    - '#T of#'
-    - '#mixed#'
-    - '#UnitEnum#'
-    - '#Reflection#'
-    - '#Traversable#'
-    - '#is used zero times#'
-    - '#type specified in iterable type#'
-  reportUnmatchedIgnoredErrors: false
+    level: max
+    paths:
+        - src
+        - tests
+    ignoreErrors:
+        # PHPDoc is prohibited inside src/Internal/ and tests/; typed-array information cannot be expressed.
+        - identifier: missingType.iterableValue
+
+        # PHPDoc is prohibited inside src/Internal/ and tests/; generic class types cannot be expressed.
+        - identifier: missingType.generics
+
+        # Reflection-driven mapping crosses the mixed-to-concrete boundary, where PHPStan cannot narrow.
+        - identifier: argument.type
+
+        # Reflection-driven mapping returns concrete types that PHPStan cannot infer from mixed input.
+        - identifier: return.type
+
+        # Enum casting iterates over cases() of a dynamic class resolved at runtime.
+        - identifier: foreach.nonIterable
+          path: src/Internal/Mappers/Object/Casters/EnumCaster.php
+
+        # Enum casting reads $case->name on a value typed as mixed by the dynamic class lookup.
+        - identifier: property.nonObject
+          path: src/Internal/Mappers/Object/Casters/EnumCaster.php
+
+        # Strategy dispatch invokes supports() on a strategy whose concrete type is not statically known.
+        - identifier: method.nonObject
+          path: src/Internal/Resolvers/StrategyResolver.php
+
+        # Transformer operates on values typed as mixed at the public boundary of the mapper.
+        - identifier: method.nonObject
+          path: src/Internal/Transformers/DateTimeTransformer.php
+
+        # Transformer operates on values typed as mixed at the public boundary of the mapper.
+        - identifier: property.nonObject
+          path: src/Internal/Transformers/EnumTransformer.php
+
+        # Late static binding in the test collection fixture mirrors tiny-blocks/collection's extension-point shape.
+        - identifier: new.static
+          path: tests/Models/Collection.php
+
+        # Test fixture properties are hydrated by the mapper; toArray reads them through reflection.
+        - identifier: property.onlyWritten
+          path: tests/Models/Configuration.php
+
+        # Test fixture properties are hydrated by the mapper; toArray reads them through reflection.
+        - identifier: property.onlyWritten
+          path: tests/Models/Dragon.php
+
+        # Iterator aggregate yields values whose concrete type is not statically known.
+        - identifier: property.nonObject
+          path: tests/Models/InvoiceSummaries.php
+    reportUnmatchedIgnoredErrors: true
