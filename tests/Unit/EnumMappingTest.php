@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Test\TinyBlocks\Mapper;
+namespace Test\TinyBlocks\Mapper\Unit;
 
 use PHPUnit\Framework\TestCase;
 use Test\TinyBlocks\Mapper\Models\Alert;
@@ -10,9 +10,10 @@ use Test\TinyBlocks\Mapper\Models\Amount;
 use Test\TinyBlocks\Mapper\Models\Dragon;
 use Test\TinyBlocks\Mapper\Models\DragonSkills;
 use Test\TinyBlocks\Mapper\Models\DragonType;
+use Test\TinyBlocks\Mapper\Models\Priority;
 use Test\TinyBlocks\Mapper\Models\Severity;
 use Test\TinyBlocks\Mapper\Models\Task;
-use TinyBlocks\Mapper\Internal\Exceptions\InvalidCast;
+use TinyBlocks\Mapper\Exceptions\InvalidCast;
 
 final class EnumMappingTest extends TestCase
 {
@@ -99,18 +100,13 @@ final class EnumMappingTest extends TestCase
 
     public function testEnumWhenInvalidCast(): void
     {
-        /** @Given data with an invalid currency value */
-        $data = [
-            'value'    => 250.00,
-            'currency' => 'INVALID'
-        ];
-
+        /** @Given an iterable with an invalid currency value */
         /** @Then an exception should be thrown */
         $this->expectException(InvalidCast::class);
         $this->expectExceptionMessage('Invalid value <INVALID> for enum <Test\TinyBlocks\Mapper\Models\Currency>.');
 
-        /** @When creating from iterable */
-        Amount::fromIterable(iterable: $data);
+        /** @When creating an Amount from the iterable */
+        Amount::fromIterable(iterable: ['value' => 250.00, 'currency' => 'INVALID']);
     }
 
     public function testPureEnumRoundTripsByCaseName(): void
@@ -131,5 +127,17 @@ final class EnumMappingTest extends TestCase
 
         /** @When mapping an Alert with a case name that does not exist */
         Alert::fromIterable(iterable: ['severity' => 'UNKNOWN']);
+    }
+
+    public function testEnumCasterPassesThroughExistingEnumInstance(): void
+    {
+        /** @Given an iterable that already holds an enum instance for the priority value */
+        $iterable = ['title' => 'Build feature', 'priority' => Priority::HIGH];
+
+        /** @When the Task is hydrated from the iterable */
+        $task = Task::fromIterable(iterable: $iterable);
+
+        /** @Then the priority is the same enum instance, untouched by any cast path */
+        self::assertSame(Priority::HIGH, $task->priority);
     }
 }

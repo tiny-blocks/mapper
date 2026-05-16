@@ -30,7 +30,7 @@ final readonly class RecursiveValueResolver
 
         if (is_array($value)) {
             $mapped = array_map(
-                fn(mixed $item): mixed => $this->resolve(value: $item, keyPreservation: $keyPreservation),
+                fn(mixed $element): mixed => $this->resolve(value: $element, keyPreservation: $keyPreservation),
                 $value
             );
 

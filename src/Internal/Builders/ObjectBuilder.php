@@ -5,48 +5,29 @@ declare(strict_types=1);
 namespace TinyBlocks\Mapper\Internal\Builders;
 
 use ReflectionClass;
-use ReflectionException;
-use ReflectionMethod;
-use ReflectionParameter;
-use TinyBlocks\Mapper\Internal\Extractors\ReflectionExtractor;
 use TinyBlocks\Mapper\Internal\Mappers\Object\Casters\CasterResolver;
 
 final readonly class ObjectBuilder
 {
-    public function __construct(private ReflectionExtractor $extractor)
-    {
-    }
-
-    /**
-     * @template T of object
-     * @param class-string<T> $class
-     * @return T
-     * @throws ReflectionException
-     */
     public function build(iterable $iterable, string $class): object
     {
         $reflection = new ReflectionClass(objectOrClass: $class);
-        $parameters = $this->extractor->extractConstructorParameters(class: $class);
-        $inputProperties = iterator_to_array(iterator: $iterable);
+        $constructor = $reflection->getConstructor();
+        $inputProperties = iterator_to_array($iterable);
 
-        $arguments = $this->buildArguments(
-            parameters: $parameters,
-            inputProperties: $inputProperties
-        );
+        if (is_null($constructor)) {
+            return $reflection->newInstance();
+        }
 
-        return $this->instantiate(reflection: $reflection, arguments: $arguments);
-    }
-
-    protected function buildArguments(array $parameters, array $inputProperties): array
-    {
         $arguments = [];
 
-        /** @var ReflectionParameter $parameter */
-        foreach ($parameters as $parameter) {
+        foreach ($constructor->getParameters() as $parameter) {
             $name = $parameter->getName();
 
             if (!array_key_exists($name, $inputProperties)) {
-                $arguments[] = $this->getDefaultValue(parameter: $parameter);
+                $arguments[] = $parameter->isDefaultValueAvailable()
+                    ? $parameter->getDefaultValue()
+                    : null;
                 continue;
             }
 
@@ -57,51 +38,16 @@ final readonly class ObjectBuilder
                 continue;
             }
 
-            $arguments[] = $this->castValue(parameter: $parameter, value: $value);
-        }
-
-        return $arguments;
-    }
-
-    protected function castValue(ReflectionParameter $parameter, mixed $value): mixed
-    {
-        $caster = new CasterResolver(parameter: $parameter);
-        return $caster->castValue(value: $value);
-    }
-
-    protected function getDefaultValue(ReflectionParameter $parameter): mixed
-    {
-        return $parameter->isDefaultValueAvailable()
-            ? $parameter->getDefaultValue()
-            : null;
-    }
-
-    protected function instantiate(ReflectionClass $reflection, array $arguments): object
-    {
-        $constructor = $reflection->getConstructor();
-
-        if ($constructor === null) {
-            return $reflection->newInstance();
+            $arguments[] = new CasterResolver(parameter: $parameter)->castValue(value: $value);
         }
 
         if ($constructor->isPrivate()) {
-            return $this->instantiateWithPrivateConstructor(
-                reflection: $reflection,
-                constructor: $constructor,
-                arguments: $arguments
-            );
+            $instance = $reflection->newInstanceWithoutConstructor();
+            $constructor->invokeArgs(object: $instance, args: $arguments);
+
+            return $instance;
         }
 
         return $reflection->newInstanceArgs(args: $arguments);
-    }
-
-    protected function instantiateWithPrivateConstructor(
-        ReflectionClass $reflection,
-        ReflectionMethod $constructor,
-        array $arguments
-    ): object {
-        $instance = $reflection->newInstanceWithoutConstructor();
-        $constructor->invokeArgs(object: $instance, args: $arguments);
-        return $instance;
     }
 }

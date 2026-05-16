@@ -12,7 +12,7 @@ final readonly class DefaultCaster implements Caster
 
     public function castValue(mixed $value): mixed
     {
-        if (!class_exists(class: $this->class) || $value instanceof $this->class) {
+        if (!class_exists($this->class) || $value instanceof $this->class) {
             return $value;
         }
 

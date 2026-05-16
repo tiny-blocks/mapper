@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace TinyBlocks\Mapper\Internal\Mappers\Object\Casters;
 
 use BackedEnum;
-use TinyBlocks\Mapper\Internal\Exceptions\InvalidCast;
+use TinyBlocks\Mapper\Exceptions\InvalidCast;
 use UnitEnum;
 
 final readonly class EnumCaster implements Caster

@@ -8,13 +8,13 @@ final class StrategyResolverContainer
 {
     private StrategyResolver $resolver;
 
-    public function set(StrategyResolver $resolver): void
-    {
-        $this->resolver = $resolver;
-    }
-
     public function get(): StrategyResolver
     {
         return $this->resolver;
+    }
+
+    public function set(StrategyResolver $resolver): void
+    {
+        $this->resolver = $resolver;
     }
 }

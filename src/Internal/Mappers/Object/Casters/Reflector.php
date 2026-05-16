@@ -14,11 +14,11 @@ final readonly class Reflector
 
     public static function reflectFrom(string $class): Reflector
     {
-        return new Reflector(reflectionClass: new ReflectionClass($class));
+        return new Reflector(reflectionClass: new ReflectionClass(objectOrClass: $class));
     }
 
     public function newInstance(array $constructorArguments): object
     {
-        return $this->reflectionClass->newInstanceArgs($constructorArguments);
+        return $this->reflectionClass->newInstanceArgs(args: $constructorArguments);
     }
 }
