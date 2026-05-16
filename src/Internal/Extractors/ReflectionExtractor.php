@@ -13,9 +13,9 @@ final readonly class ReflectionExtractor
     {
         $reflection = new ReflectionClass(objectOrClass: $object);
         $properties = $reflection->getProperties(
-            ReflectionProperty::IS_PUBLIC
-            | ReflectionProperty::IS_PROTECTED
-            | ReflectionProperty::IS_PRIVATE
+            filter: ReflectionProperty::IS_PUBLIC
+                | ReflectionProperty::IS_PROTECTED
+                | ReflectionProperty::IS_PRIVATE
         );
 
         $extracted = [];
@@ -29,17 +29,5 @@ final readonly class ReflectionExtractor
         }
 
         return $extracted;
-    }
-
-    public function extractConstructorParameters(string $class): array
-    {
-        $reflection = new ReflectionClass(objectOrClass: $class);
-        $constructor = $reflection->getConstructor();
-
-        if (is_null($constructor)) {
-            return [];
-        }
-
-        return $constructor->getParameters();
     }
 }
