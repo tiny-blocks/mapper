@@ -18,7 +18,7 @@ final readonly class IterableMappingStrategy implements ConditionalMappingStrate
     public function map(mixed $value, KeyPreservation $keyPreservation): array
     {
         $mapped = array_map(
-            fn(mixed $item): mixed => $this->resolver->resolve(value: $item, keyPreservation: $keyPreservation),
+            fn(mixed $element): mixed => $this->resolver->resolve(value: $element, keyPreservation: $keyPreservation),
             $this->extractor->extract(object: $value)
         );
 

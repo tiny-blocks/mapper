@@ -14,11 +14,11 @@ final readonly class ValueObjectDetector implements TypeDetector
 
     public function matches(mixed $value): bool
     {
-        $reflection = new ReflectionClass($value);
+        $reflection = new ReflectionClass(objectOrClass: $value);
         $properties = $reflection->getProperties(
-            ReflectionProperty::IS_PUBLIC
-            | ReflectionProperty::IS_PROTECTED
-            | ReflectionProperty::IS_PRIVATE
+            filter: ReflectionProperty::IS_PUBLIC
+                | ReflectionProperty::IS_PROTECTED
+                | ReflectionProperty::IS_PRIVATE
         );
 
         return !$value instanceof UnitEnum && count($properties) === self::SINGLE_PROPERTY;
