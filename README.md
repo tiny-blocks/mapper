@@ -1,14 +1,15 @@
 # Mapper
 
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-green)](https://github.com/tiny-blocks/mapper/blob/main/LICENSE)
 
 * [Overview](#overview)
 * [Installation](#installation)
 * [How to use](#how-to-use)
+    + [Create an object from an iterable](#create-an-object-from-an-iterable)
+    + [Map object to array](#map-object-to-array)
+    + [Map object to JSON](#map-object-to-json)
 * [License](#license)
 * [Contributing](#contributing)
-
-<div id='overview'></div> 
 
 ## Overview
 
@@ -16,15 +17,11 @@ Maps PHP objects to and from arrays, JSON, and iterables through reflection and 
 value objects, nested objects, date-time types, and collections out of the box. Designed for DTO hydration,
 serialization at the HTTP boundary, and data transfer between bounded contexts.
 
-<div id='installation'></div>
-
 ## Installation
 
 ```bash
 composer require tiny-blocks/mapper
 ```
-
-<div id='how-to-use'></div>
 
 ## How to use
 
@@ -110,6 +107,8 @@ Now you can map data into a `Shipping` object using `fromIterable`:
 ```php
 <?php
 
+declare(strict_types=1);
+
 use Example\Shipping;
 
 $shipping = Shipping::fromIterable(iterable: [
@@ -176,13 +175,9 @@ This will produce the following JSON:
 }
 ```
 
-<div id='license'></div>
-
 ## License
 
 Mapper is licensed under [MIT](LICENSE).
-
-<div id='contributing'></div>
 
 ## Contributing
 
