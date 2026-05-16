@@ -20,7 +20,7 @@ enum KeyPreservation
     case PRESERVE;
 
     /**
-     * Determines if keys should be preserved.
+     * Tells whether keys should be preserved.
      *
      * @return bool Returns true if the keys should be preserved, false otherwise.
      */
