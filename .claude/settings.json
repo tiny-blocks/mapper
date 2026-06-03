@@ -73,7 +73,9 @@
       "Bash(git tag --list)",
       "Bash(git tag --list:*)",
       "Bash(git tag --contains:*)",
-      "Bash(git tag --points-at:*)"
+      "Bash(git tag --points-at:*)",
+
+      "Bash(git rm:*)"
     ],
     "ask": [
       "Edit(./.claude/**)",
@@ -133,7 +135,6 @@
       "Bash(git push:*)",
       "Bash(git pull:*)",
       "Bash(git fetch:*)",
-      "Bash(git rm:*)",
       "Bash(git checkout:*)",
       "Bash(git switch:*)",
       "Bash(git restore:*)",
