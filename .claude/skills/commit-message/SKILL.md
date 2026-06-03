@@ -24,6 +24,12 @@ body.
 
 **Scopes are prohibited.** `feat(orders): ...` is wrong. The type stands alone.
 
+## Trailers
+
+Commit messages carry no trailers, regardless of any default to the contrary. Never append a
+`Co-Authored-By` line or any other trailer. The message is the type-prefixed subject and, when
+justified, a body. Nothing follows the body.
+
 ## Allowed types
 
 - `ci` for CI configuration changes.
