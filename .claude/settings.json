@@ -11,6 +11,24 @@
       "Write(./**)",
 
       "Bash(make:*)",
+      "Bash(docker:*)",
+
+      "Bash(rtk gain:*)",
+      "Bash(rtk discover:*)",
+      "Bash(rtk --version)",
+
+      "Bash(rtk git status:*)",
+      "Bash(rtk git diff:*)",
+      "Bash(rtk git log:*)",
+      "Bash(rtk git show:*)",
+      "Bash(rtk ls:*)",
+      "Bash(rtk cat:*)",
+      "Bash(rtk grep:*)",
+      "Bash(rtk rg:*)",
+      "Bash(rtk head:*)",
+      "Bash(rtk tail:*)",
+
+      "Bash(rtk docker:*)",
 
       "Bash(rg:*)",
       "Bash(grep:*)",
@@ -26,6 +44,7 @@
       "Bash(echo:*)",
       "Bash(mkdir:*)",
       "Bash(rmdir:*)",
+      "Bash(rm:*)",
 
       "Bash(composer install:*)",
       "Bash(composer validate:*)",
@@ -90,7 +109,6 @@
       "Bash(composer remove:*)",
       "Bash(composer normalize:*)",
 
-      "Bash(docker:*)",
       "Bash(curl:*)",
       "Bash(wget:*)"
     ],
@@ -130,7 +148,14 @@
       "Write(~/.ssh/**)",
 
       "Bash(php:*)",
-      "Bash(rm:*)",
+
+      "Bash(rm --no-preserve-root:*)",
+      "Bash(rm -rf /)",
+      "Bash(rm * /)",
+      "Bash(rm * ~)",
+      "Bash(rm * ~/)",
+      "Bash(rm * $HOME)",
+      "Bash(rm * $HOME/)",
 
       "Bash(git push:*)",
       "Bash(git pull:*)",
