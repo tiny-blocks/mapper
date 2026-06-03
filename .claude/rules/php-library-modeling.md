@@ -126,6 +126,14 @@ The test. If the consumer instantiates or extends this class to integrate with t
 role name is legitimate. If the class models a concept the consumer manipulates (a money amount,
 a country code, a color), the role name is wrong.
 
+**Scope.** The architectural-role banlist and the anemic-verb banlist apply to the **public
+surface**: types at the `src/` root, types in public `<ConceptGroup>/` folders, and public
+exception and contract names. Inside `src/Internal/` (implementation detail by definition, where
+the namespace is the boundary), a collaborator may carry a mechanical role or operation name that
+describes its job (`Decoder`, `Encoder`, `Parser`, `Resolver`), since consumers never see or
+manipulate it. The always-banned names (`Data`, `Info`, `Utils`, `Item`, `Record`, `Entity`)
+remain banned everywhere, `Internal/` included.
+
 ## Value objects
 
 - Are immutable. No setters. No mutation after construction. Operations return new instances.

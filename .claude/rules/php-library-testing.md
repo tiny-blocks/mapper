@@ -36,7 +36,8 @@ Verify every item before producing any test code. If any item fails, revise befo
 4. No intermediate variables used only once. Chain method calls when the intermediate state is
    not referenced elsewhere (e.g., `Money::of(...)->add(...)` instead of
    `$money = Money::of(...)` followed by `$money->add(...)`).
-5. No private or helper methods in test classes. The only non-test methods allowed are data
+5. No private or helper methods in test classes. The only non-test methods allowed are PHPUnit
+   lifecycle hooks (`setUp`, `setUpBeforeClass`, `tearDown`, `tearDownAfterClass`) and data
    providers. Setup logic complex enough to extract belongs in a dedicated fixture class.
 6. Test only the public API. Never assert on private state or `Internal/` classes directly.
 7. Test the behavior that **raises** an exception, never the exception itself. Exception classes
@@ -50,7 +51,12 @@ Verify every item before producing any test code. If any item fails, revise befo
    removed.
 8. Never mock internal collaborators. Use real objects. Test doubles are used only at system
    boundaries (filesystem, clock, network) when the library interacts with external resources.
-9. Name tests after behavior, not method names.
+9. Name tests after behavior using the `testXxxWhenYyyThenZzz` shape, never after the method
+   under test. `Xxx` names the subject or operation, `Yyy` the condition, `Zzz` the expected
+   outcome (for example, `testAddMoneyWhenSameCurrencyThenAmountsAreSummed`). The `When`/`Then`
+   structure is mandatory. The `@Given`/`@When`/`@Then`/`@And` annotation blocks describe the
+   steps within. A condition-free operation may collapse to `testXxxThenZzz` when there is no
+   meaningful precondition to name.
 10. Use domain-specific names in variables and properties. Never `$spy`, `$mock`, `$stub`,
     `$fake`, `$dummy` as variable or property names. Use the domain concept the object
     represents (`$collection`, `$amount`, `$currency`, `$sortedElements`). Class names like
@@ -59,8 +65,9 @@ Verify every item before producing any test code. If any item fails, revise befo
     `/** @Given a mocked collection in test state */`.
 12. Never use the `/** @test */` annotation. Test methods are discovered by the `test` prefix in
     the method name.
-13. Never use named arguments on PHPUnit assertions (`assertEquals`, `assertSame`, `assertTrue`,
-    `expectException`, etc.). Pass arguments positionally.
+13. Named arguments are never used on PHPUnit assertions and expectations. Arguments are passed
+    positionally. The canonical rule and its full exclusion list live in
+    `php-library-code-style.md` rule 4.
 14. Never include conditional logic inside tests. Each `@Then` block expresses one logical
     concept. The only allowed `try`/`catch` is when the assertion target is a property of the
     caught exception that cannot be expressed via `expectException*` methods (notably
@@ -69,6 +76,8 @@ Verify every item before producing any test code. If any item fails, revise befo
 15. Never use `@codeCoverageIgnore`, attributes, or configuration that exclude code from
     coverage. Never suppress mutants via `infection.json.dist` or any other mechanism. See
     "Coverage and mutation discipline".
+16. Member ordering in test classes follows `php-library-code-style.md` rule 6 (PHPUnit
+    test-class sub-grouping).
 
 ## Structure: Given/When/Then (BDD)
 
@@ -202,7 +211,7 @@ code. Remove it instead of writing a behavior test against a constructor.
 does not cover.** Message, code, and class are covered by PHPUnit (`expectException`,
 `expectExceptionMessage`, `expectExceptionMessageMatches`, `expectExceptionCode`): use those
 methods, not `try`/`catch`. The only case that warrants `try`/`catch` is inspecting accessors
-that PHPUnit cannot reach — notably `getPrevious()` for chain inspection, or domain-specific
+that PHPUnit cannot reach, notably `getPrevious()` for chain inspection, or domain-specific
 accessors on a `TransportFailure` (`url()`, `method()`, `reason()`).
 
 **Prohibited.** `try`/`catch` to assert message:
@@ -227,22 +236,11 @@ $http->send(request: $request);
 
 ## Test setup and fixtures
 
-- Each `@Given` or `@And` block contains exactly one annotation followed by one expression or
-  assignment. Never place multiple declarations under a single annotation. The exception for
-  data-provider tests applies here as well (see rule 3).
-- No intermediate variables used only once. Chain method calls when the intermediate state is
-  not referenced elsewhere.
-- No private or helper methods in test classes. The only non-test methods allowed are data
-  providers. Setup logic complex enough to extract belongs in a dedicated fixture class, not in
-  a private method on the test class.
-- Domain terms in variables and properties. Never use technical testing jargon (`$spy`, `$mock`,
-  `$stub`, `$fake`, `$dummy`) as variable or property names. Use the domain concept the object
-  represents (`$collection`, `$amount`, `$currency`, `$sortedElements`). Class names like
-  `ClientMock` or `GatewaySpy` are acceptable. The variable holding the instance is what
-  matters.
-- Annotations use domain language. Write `/** @Given a collection of amounts */`, not
-  `/** @Given a mocked collection in test state */`. The annotation describes the domain
-  scenario, not the technical setup.
+Checklist items 3, 4, 5, 10, and 11 govern setup blocks: one declaration per annotation, no
+single-use intermediate variables, no private or helper methods, domain-named variables, and
+domain-language annotations. The examples below illustrate the rules most often violated in
+practice. Double naming (the `$spy`/`$mock` banlist and the class-name suffix nuance) is detailed
+in "Test doubles" below.
 
 **Prohibited.** Multiple declarations under a single annotation:
 

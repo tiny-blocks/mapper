@@ -8,10 +8,12 @@ paths:
 # Code style
 
 Semantic rules for all PHP files in libraries. Formatting rules covered by `PSR-12` are enforced
-by `phpcs.xml`. Two formatting rules outside `PSR-12` (no vertical alignment, no trailing comma in
-multi-line lists) are documented at the end of this file under "Formatting overrides". Complexity
-rules live in `php-library-modeling.md`. Folder structure, public API boundary, and the semantics
-of `Internal/` live in `php-library-architecture.md`.
+by `phpcs.xml`. Four formatting rules outside `PSR-12` (single-line signatures within 120
+characters, no vertical alignment in parameter lists, vertical alignment of `=>` in multi-line
+match arms and array literals, no trailing comma in multi-line lists) are documented at the end
+of this file under "Formatting overrides". Complexity rules live in `php-library-modeling.md`.
+Folder structure, public API boundary, and the semantics of `Internal/` live in
+`php-library-architecture.md`.
 
 ## Pre-output checklist
 
@@ -33,6 +35,10 @@ Verify every item before producing any PHP code. If any item fails, revise befor
       after named arguments. When the caller passes through a `...$variadic`, all arguments are
       positional. New own-code APIs should prefer a typed collection parameter over a variadic
       so named-argument call sites remain possible.
+    - Native PHP class static and instance methods (`DateTimeImmutable::createFromFormat`,
+      `DateTimeImmutable::createFromInterface`, `->setTimezone`, `->format`, and similar). Their
+      parameter names are an internal implementation detail, not a stable contract, exactly as
+      with native functions.
 
    Native PHP **class constructors** (`parent::__construct` calls to `\Exception`,
    `\RuntimeException`, `\InvalidArgumentException`, `\LogicException`, and similar) are not
@@ -40,31 +46,50 @@ Verify every item before producing any PHP code. If any item fails, revise befor
    the positional call would pass an argument whose value equals the parameter's default.
    Example: `parent::__construct(message: sprintf(...), previous: $previous)` instead of
    `parent::__construct(sprintf(...), 0, $previous)`. The exclusion above covers native
-   functions and enum methods, not native class instantiation.
+   functions, enum methods, and native class static and instance methods, but not native class
+   constructors (instantiation): those accept named arguments per rule 8.
 5. Classes follow the rules in "Inheritance and constructors". `final readonly` is the default,
    with documented exceptions for extension points and for parents that are not `readonly`.
 6. Members are ordered constants first, then constructor, then static methods, then instance
-   methods. Within each group, order by body size ascending (number of lines between `{` and `}`).
-   Constants and enum cases, which have no body, are ordered by name length ascending. This
-   ordering may be overridden only when the alternative carries explicit documentation value:
-   grouping by domain class with section markers (HTTP status codes by 1xx/2xx/3xx/etc),
-   mirroring the order of an implemented interface, or similar evident structure. The override
-   must be obvious at first reading.
+   methods. Within each group, order by **member name length ascending** (count the name only,
+   without parentheses, arguments, or return type). Constants, enum cases, and methods share
+   the same name-length-ascending rule, applied within their respective groups. This mirrors
+   the rule that governs constructor parameters and named arguments (rule 7). When two names
+   have equal length, order them alphabetically. This ordering may be overridden only when the
+   alternative carries explicit documentation value: grouping by domain class with section
+   markers (HTTP status codes by 1xx/2xx/3xx/etc), mirroring the order of an implemented
+   interface, or similar evident structure. The override must be obvious at first reading.
 
    **At call sites** (chained method calls in production code, tests, or documentation
-   examples), consecutive method invocations on the same receiver are ordered by the **visible
-   width** of each call expression ascending. The body is not visible at the call site, so the
-   visible width is the practical proxy for body size. Boolean toggles such as `->secure()` and
-   `->httpOnly()` come before parameterized `with*` builders for the same reason. When two
-   calls have equal width, order them alphabetically by method name.
+   examples), consecutive method invocations on the same receiver are ordered by **method name
+   length ascending**, the same rule that governs member declarations. Boolean toggles such as
+   `->secure()` and `->httpOnly()` come before parameterized `with*` builders because their
+   names are shorter, not because the expression is narrower. When two method names have equal
+   length, order them alphabetically.
 
    **Terminal methods that change the receiver type** stay at the end of the chain regardless
-   of width. A `build()` that returns the built value, a `commit()` that finalizes a unit of
-   work, a `send()` that flushes a request, are terminal: the chain ends with them. The
-   ordering rule applies only to consecutive calls on the same receiver type; calls that
+   of name length. A `build()` that returns the built value, a `commit()` that finalizes a unit
+   of work, a `send()` that flushes a request, are terminal: the chain ends with them. The
+   ordering rule applies only to consecutive calls on the same receiver type. Calls that
    transition to a different type are not reorderable. The same applies in reverse to the
-   factory or accessor that starts the chain (`Cookie::create(...)`, `$repository`) — it stays
+   factory or accessor that starts the chain (`Cookie::create(...)`, `$repository`) stays
    at its position.
+
+   **PHPUnit test classes** follow a dedicated sub-grouping inside the instance-methods group
+   that overrides the name-length-ascending rule:
+
+    1. **Lifecycle hooks** first, in PHPUnit execution order:
+       `setUpBeforeClass` → `setUp` → `tearDown` → `tearDownAfterClass`. Only those actually
+       defined appear. Never introduce an empty hook to satisfy the rule.
+    2. **Test methods** (prefix `test`) next, ordered by name length ascending (alphabetical
+       tiebreak).
+    3. **Data providers** last, ordered by name length ascending (alphabetical tiebreak).
+
+   A method is a data provider if and only if its name appears as the string argument of a
+   `#[DataProvider('<name>')]` attribute or a `@dataProvider <name>` docblock annotation on a
+   test method in the same class. The naming convention (`*DataProvider`) is informational
+   only. The reference is the authoritative signal. A method named `*DataProvider` that no
+   test references is dead code under rule 17, not a data provider.
 7. Constructor parameters are ordered by parameter name length ascending (count the name only,
    without `$` or type), except when parameters have an implicit semantic order (for example,
    `$start/$end`, `$from/$to`, `$startAt/$endAt`), which takes precedence. Parameters with default
@@ -79,7 +104,10 @@ Verify every item before producing any PHP code. If any item fails, revise befor
     `$acc`.
 11. No generic identifiers exist. Use domain-specific names instead. Examples are `$data` to
     `$payload`, `$value` to `$totalAmount`, `$item` to `$element`, `$info` to `$currencyDetails`,
-    `$result` to `$conversionOutcome`.
+    `$result` to `$conversionOutcome`. **Exception:** a factory or constructor parameter that
+    wraps a single opaque scalar the value object exists to represent may keep `$value` when no
+    more specific meaning applies (for example, `Seconds::from(int $value)`). Where a more
+    specific meaning exists, prefer it (`$iso`, `$identifier`, `$isoDay`).
 12. No raw arrays exist where a typed collection or value object is available. When data is
     `Collectible`, use the `tiny-blocks/collection` fluent API (`Collection`, `Collectible`). Use
     `createLazyFrom` when elements are consumed once. Raw arrays are acceptable only for primitive
@@ -104,11 +132,12 @@ Verify every item before producing any PHP code. If any item fails, revise befor
 20. All class references use `use` imports at the top of the file. Fully qualified names inline are
     prohibited.
 21. Return types and `new` calls use the explicit class name. `self` is prohibited as a type,
-    as a return type, and in `new self()` instantiation. Constant access via `self::CONST_NAME`
-    is permitted. `static` is permitted only inside extension-point classes (declared `class`
-    without `final readonly`) and inside traits, where late static binding lets subclasses or
-    consuming classes instantiate the correct concrete type. In every other context, use the
-    class name.
+    as a return type, in `new self()` instantiation, and in static method calls
+    (`self::from(...)` → `ClassName::from(...)`). Constant access via `self::CONST_NAME` is the
+    only permitted `self::` form. `static` is permitted only inside extension-point classes
+    (declared `class` without `final readonly`) and inside traits, where late static binding lets
+    subclasses or consuming classes instantiate the correct concrete type. In every other
+    context, use the class name.
 22. Always use the most current and clean syntax available in the target PHP version. Prefer
     `match` over `switch`, first-class callables over `Closure::fromCallable()`, readonly promotion
     over manual assignment, enum methods over external switch or if chains, named arguments over
@@ -118,6 +147,26 @@ Verify every item before producing any PHP code. If any item fails, revise befor
     expression are no longer required and add visual noise.
 23. All identifiers, comments, and documentation use American English. See "American English" for
     the spelling list.
+24. No method has more than three `return` statements. This bounds branching complexity and
+    coexists with rule 9 (no `else`): early-return guard clauses are fine, but a method that needs
+    more than three exit points is doing too much. Invariant violations `throw` a dedicated
+    exception rather than returning, so guards rarely add return points. When branching still
+    produces more than three returns, replace it with a `match` or map dispatch that resolves to a
+    single return, or extract a collaborator. See "Return statements".
+25. The string concatenation operator (`.`) is never used, in any position. A string that
+    would be assembled by concatenation, whether it embeds a value or joins two or more
+    strings, is built with `sprintf` and a `$template` variable (rule 19) instead. This
+    covers value prefixes, value suffixes, inline fragments, and plain joins. See "Format
+    strings".
+
+    **Exception:** a `const` string literal that contains no `sprintf` placeholder may
+    use `.` to split a message across lines when a single-line literal would exceed the
+    120-character limit. In that case `sprintf` offers no benefit, since the `$template`
+    line would itself exceed the limit, and heredoc and nowdoc are not permitted in
+    constant expressions, so concatenation is the only way to honor the line length.
+    This exception is limited to placeholder-free constant literals. Runtime string
+    assembly, and any constant that interpolates a value, still uses `sprintf` with a
+    `$template`.
 
 ## Naming
 
@@ -136,11 +185,13 @@ Type declarations, return types, and `new` calls inside a class use the explicit
 The class name is unambiguous, survives refactors that move the method to a different class,
 and reads identically inside the class body and at the call site.
 
-- `self` is prohibited everywhere as a type, as a return type, and in `new self()`
-  instantiation. Constant access via `self::CONST_NAME` is **permitted**. The prohibition
-  covers the forms that carry refactoring ambiguity when a method moves to a different class
-  (the type-or-instantiation forms). Constant access does not have that ambiguity because the
-  constant is declared in the same class body.
+- `self` is prohibited everywhere as a type, as a return type, in `new self()` instantiation,
+  and in static method calls (`self::from(...)`). Constant access via `self::CONST_NAME` is
+  **permitted** and is the only allowed `self::` form. The prohibition covers the forms that
+  carry refactoring ambiguity when a method moves to a different class (type, instantiation, and
+  static-call forms): a `self::from()` call rebinds to the wrong class if the method moves,
+  exactly like `new self()`. Constant access does not have that ambiguity because the constant is
+  declared in the same class body.
 - `static` is permitted only inside extension-point classes (declared `class` without
   `final readonly`) and inside traits, where late static binding is required for subclasses or
   consuming classes to instantiate the correct concrete type.
@@ -225,15 +276,22 @@ are `canceled` (not `cancelled`), `organization` (not `organisation`), `initiali
 
 ### When required
 
-- Every method of an interface, **including interfaces declared inside `src/Internal/`**.
-  Interfaces define contracts. The contract is documentation by definition, regardless of
-  namespace. The `Internal/` boundary applies to implementations, not to the contracts that
-  internal collaborators expose to each other.
+Everything exposed on the public API for consumption carries PHPDoc per these rules.
+
+- Every method of an interface, regardless of location. Interfaces are contracts, so they carry
+  PHPDoc per these rules even when declared inside `src/Internal/`.
 - Every public method of a concrete class outside `src/Internal/`. Public classes are at the
   public API boundary by definition. Consumers call every public method directly, and the
   PHPDoc is the contract for each call. Trivial getters and `with*` methods are not exempt.
   The only exception is a public method whose contract is already documented on an implemented
   interface (the interface carries the docblock).
+- Every abstract method on a public class or extension point outside `src/Internal/`. Abstract
+  methods are part of the public contract consumers implement or override, so each carries PHPDoc
+  exactly as an interface method does.
+- A class-level summary docblock on every interface (including interfaces inside `src/Internal/`)
+  and on every public class or enum outside `src/Internal/`. The summary is a single line placed
+  directly above the declaration stating what the type is or does, following the same summary-line
+  rule as method docblocks. It is the class-level counterpart of the per-method PHPDoc.
 
 ### When prohibited
 
@@ -242,13 +300,12 @@ are `canceled` (not `cancelled`), `organization` (not `organisation`), `initiali
 - Private and protected methods.
 - Public methods of concrete classes whose contract is already documented on an implemented
   interface. The interface carries the docblock.
-- Anything inside `src/Internal/`. Internal types are implementation detail and must not carry
-  PHPDoc. The namespace itself is the boundary. See `php-library-architecture.md` for the
-  architectural meaning of `Internal/`. **Exception**: interfaces and their methods. An
-  interface declared inside `src/Internal/` still defines a contract, and the contract is
-  documented per `### When required` regardless of namespace. The prohibition covers concrete
-  classes, traits, enums, and anonymous classes inside `Internal/`, never interfaces.
-- Anywhere inside `tests/`. Test methods name the scenario via the `testXxxWhenYyyGivenThenZzz`
+- Concrete classes and collaborators inside `src/Internal/`. Internal implementation types are
+  detail, not contract, and carry no PHPDoc, class-level summary included. **Interfaces are the
+  exception**: an interface declared inside `src/Internal/` is still a contract and follows the
+  interface PHPDoc rules under "When required", including the class-level summary. See
+  `php-library-architecture.md` for the architectural meaning of `Internal/`.
+- Anywhere inside `tests/`. Test methods name the scenario via the `testXxxWhenYyyThenZzz`
   naming convention, and the `@Given`/`@When`/`@Then`/`@And` annotation blocks defined in
   `php-library-testing.md` describe the steps. PHPDoc documentation (summary plus
   `@param`/`@return` descriptions) is prohibited on test methods, data providers, fixtures,
@@ -261,8 +318,10 @@ are `canceled` (not `cancelled`), `organization` (not `organisation`), `initiali
 The prohibitions above apply to **every form of PHPDoc** in the prohibited scope:
 method-level docblocks, property-level docblocks, inline `@var` annotations on local variables,
 and PHPDoc blocks placed above anonymous functions or closures inside method bodies. Inside
-`src/Internal/` and `tests/`, zero PHPDoc is the rule with no exception. PHPStan errors that
-result from the missing annotations route through `ignoreErrors` (see below).
+`tests/`, zero PHPDoc is the rule with no exception. Inside `src/Internal/`, zero PHPDoc applies to
+concrete classes and collaborators, but interfaces carry PHPDoc per "When required". PHPStan errors
+that result from the missing annotations on the non-interface code route through `ignoreErrors`
+(see below).
 
 The PHPDoc prohibitions above take priority over the typed-array case. When PHPStan at
 `level: max` flags a missing iterable value type (`missingType.iterableValue`,
@@ -270,10 +329,9 @@ The PHPDoc prohibitions above take priority over the typed-array case. When PHPS
 
 - On a **constructor parameter** → suppress via `ignoreErrors` in `phpstan.neon.dist`. Do not
   add PHPDoc.
-- On anything inside **`src/Internal/`** (concrete classes, traits, enums) → suppress via
-  `ignoreErrors`. Do not add PHPDoc. Interfaces inside `src/Internal/` are the exception:
-  they carry PHPDoc per `### When required`, and the PHPStan errors they raise are resolved
-  through the PHPDoc, never through `ignoreErrors`.
+- On a concrete class or collaborator inside **`src/Internal/`** → suppress via `ignoreErrors`.
+  Do not add PHPDoc. An interface inside `src/Internal/` is the exception: it carries PHPDoc per
+  "When required", so the typed-array information goes in the docblock, not `ignoreErrors`.
 - On anything inside **`tests/`** → suppress via `ignoreErrors`. Do not add PHPDoc.
 - On a **public method of a public (non-Internal) class** → add full PHPDoc with summary,
   `@param` descriptions, and the typed-array information. The bare-tag form remains
@@ -338,8 +396,7 @@ public function __construct(public array $entries)
 }
 ```
 
-**Prohibited.** PHPDoc on a **concrete class** inside `src/Internal/` (the prohibition does
-not extend to interfaces; see "Correct" below for an Internal/ interface):
+**Prohibited.** PHPDoc on anything inside `src/Internal/`:
 
 ```php
 namespace TinyBlocks\Http\Internal\Client;
@@ -350,26 +407,6 @@ final readonly class Url
     public static function compose(string $path, ?array $query, string $baseUrl): string
     {
     }
-}
-```
-
-**Correct.** Interface declared **inside `src/Internal/`** still carries PHPDoc on every
-method. The Internal/ prohibition covers concrete classes; interfaces are exempt because they
-are the contract:
-
-```php
-namespace TinyBlocks\Http\Internal\Client;
-
-interface RequestResolver
-{
-    /**
-     * Resolves the given URL against the configured base URL.
-     *
-     * @param string $url The path or absolute URL to resolve.
-     * @return string The absolute URL to dispatch.
-     * @throws MalformedPath If the URL violates RFC 3986.
-     */
-    public function resolve(string $url): string;
 }
 ```
 
@@ -490,6 +527,40 @@ if ($value < 0 || $value > 16) {
 }
 ```
 
+The `.` operator is never used to assemble a string. Value prefixes, value suffixes, inline
+fragments, and plain joins all go through `sprintf` with a `$template`. This holds even when
+no value is interpolated, for example when joining a directory and a file name.
+
+The sole exception is a placeholder-free `const` string literal that would exceed 120
+characters on a single line: it may use `.` to split across lines, since `sprintf` would
+not shorten the line and heredoc is unavailable in constant expressions.
+
+**Prohibited.** Concatenation to inject a value:
+
+```php
+$candidate = is_int($value) ? '@' . $value : $value;
+```
+
+**Correct.** `$template` plus `sprintf`:
+
+```php
+$template = '@%d';
+$candidate = is_int($value) ? sprintf($template, $value) : $value;
+```
+
+**Prohibited.** Concatenation to join strings:
+
+```php
+$location = $directory . '/' . $file;
+```
+
+**Correct.** A single `$template` for the join:
+
+```php
+$template = '%s/%s';
+$location = sprintf($template, $directory, $file);
+```
+
 ## Constructor chaining
 
 PHP 8.4 allows chained method calls directly on a `new` expression without wrapping it in
@@ -512,10 +583,82 @@ $body = new ServerRequest(method: 'GET', uri: 'https://api.example.com')
     ->getBody();
 ```
 
+## Return statements
+
+A method has at most three `return` statements. The cap keeps methods small and their control
+flow scannable, and it complements rule 9: early returns are the preferred alternative to `else`,
+but they stop being a simplification once a method accumulates more than three exit points.
+Invariant violations are signaled with a `throw`, not a `return`, so guard clauses usually do not
+add to the count.
+
+**Prohibited.** Four return points:
+
+```php
+public function classify(int $score): Grade
+{
+    if ($score >= 90) {
+        return Grade::A;
+    }
+
+    if ($score >= 80) {
+        return Grade::B;
+    }
+
+    if ($score >= 70) {
+        return Grade::C;
+    }
+
+    return Grade::F;
+}
+```
+
+**Correct.** Single return through `match`:
+
+```php
+public function classify(int $score): Grade
+{
+    return match (true) {
+        $score >= 90 => Grade::A,
+        $score >= 80 => Grade::B,
+        $score >= 70 => Grade::C,
+        default      => Grade::F
+    };
+}
+```
+
 ## Formatting overrides
 
-Three formatting rules are not covered by the canonical `phpcs.xml` (which references `PSR-12`
+Four formatting rules are not covered by the canonical `phpcs.xml` (which references `PSR-12`
 only). Apply them manually.
+
+### Single-line signatures within 120 characters
+
+A function or constructor signature stays on one line when the whole signature fits within the
+120-character limit. Do not break the parameter list onto multiple lines unless the single-line
+form would exceed 120 characters. The opening brace still goes on its own line (PSR-12). Break to
+one parameter per line only when the signature genuinely overflows.
+
+**Prohibited.** Multiline signature that fits on one line:
+
+```php
+private function __construct(
+    public Money $amount,
+    public OrderContext $context,
+    public ExternalReference $id
+) {
+}
+```
+
+**Correct.** Single line within 120 characters:
+
+```php
+private function __construct(public Money $amount, public OrderContext $context, public ExternalReference $id)
+{
+}
+```
+
+When the one-line form would exceed 120 characters, break to one parameter per line and apply the
+no-vertical-alignment and no-trailing-comma rules below.
 
 ### No vertical alignment in parameter lists
 
