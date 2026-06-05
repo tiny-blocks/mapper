@@ -25,7 +25,7 @@
     "require-dev": {
         "ergebnis/composer-normalize": "^2.51",
         "infection/infection": "^0.33",
-        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan": "^2.2",
         "phpunit/phpunit": "^13.1",
         "squizlabs/php_codesniffer": "^4.0"
     },

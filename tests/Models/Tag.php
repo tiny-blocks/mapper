@@ -4,13 +4,9 @@ declare(strict_types=1);
 
 namespace Test\TinyBlocks\Mapper\Models;
 
-use TinyBlocks\Mapper\ObjectMappability;
-use TinyBlocks\Mapper\ObjectMapper;
-
-final class Tag implements ObjectMapper
+abstract class Tag
 {
-    use ObjectMappability;
-
-    public string $name = '';
-    public string $color = 'gray';
+    public function __construct(public string $label)
+    {
+    }
 }

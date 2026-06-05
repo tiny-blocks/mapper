@@ -5,24 +5,17 @@ declare(strict_types=1);
 namespace TinyBlocks\Mapper;
 
 /**
- * Defines whether to preserve or discard keys during mapping or conversion.
+ * Defines whether array keys are preserved or discarded when serializing iterable content.
  */
-enum KeyPreservation
+enum KeyPreservation: string
 {
-    /**
-     * Indicates that the keys should be discarded.
-     */
-    case DISCARD;
-
-    /**
-     * Indicates that the keys should be preserved.
-     */
-    case PRESERVE;
+    case DISCARD = 'discard';
+    case PRESERVE = 'preserve';
 
     /**
      * Tells whether keys should be preserved.
      *
-     * @return bool Returns true if the keys should be preserved, false otherwise.
+     * @return bool True if keys should be preserved, false otherwise.
      */
     public function shouldPreserveKeys(): bool
     {

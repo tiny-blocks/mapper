@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace Test\TinyBlocks\Mapper\Models;
 
-use TinyBlocks\Mapper\IterableMappability;
-use TinyBlocks\Mapper\IterableMapper;
+use ArrayIterator;
+use IteratorAggregate;
 
-final readonly class Catalog implements IterableMapper
+final readonly class Catalog implements IteratorAggregate
 {
-    use IterableMappability;
-
-    public function __construct(public string $name, public array $items)
+    public function __construct(public string $label, public string $reference)
     {
+    }
+
+    public function getIterator(): ArrayIterator
+    {
+        return new ArrayIterator();
     }
 }

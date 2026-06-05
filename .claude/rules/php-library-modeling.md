@@ -52,6 +52,9 @@ algorithm. If any item fails, revise before outputting.
     or worse needs explicit justification.
 16. Prefer lazy or streaming evaluation over materializing intermediate results. Memory usage
     is bounded and proportional to the output, not to the sum of intermediate stages.
+17. A configuration-like value object whose fields are mostly optional exposes a no-argument
+    baseline factory (`default()`) plus fluent immutable `with*` copies, not a single factory
+    whose signature lists every field. See "Value objects".
 
 ## Modeling principles
 
@@ -63,7 +66,8 @@ Apply the following principles where they sharpen the design. Treat them as guid
   domain uses. Code and conversation share the same terms.
 - SOLID. Interfaces define narrow contracts. Composition is preferred to inheritance.
   Substitutability holds at every interface boundary.
-- DRY. No duplicated logic across two or more places.
+- DRY. No duplicated logic across two or more places. See "Duplication" in
+  `php-library-code-style.md` for how to resolve it without inheritance or private helpers.
 - KISS. No abstraction without real duplication or isolation need.
 
 ## Nomenclature
@@ -177,6 +181,26 @@ final readonly class Money
 
 Money::of(amount: 1000, currency: Currency::BRL);
 Money::zero(currency: Currency::USD);
+```
+
+When a value object is configuration-like and most of its fields are optional with defaults, prefer
+a baseline factory that takes no required arguments (`default()`, or `from()` with every parameter
+defaulted) together with fluent immutable `with*` copies, over a single factory whose signature
+carries every field. Each `with*` returns a new instance. Prefer the `with*` methods on the value
+object itself over a separate mutable builder class: the value object is already immutable, so it
+is its own builder. The smell is a factory signature that lists every field while most are
+optional.
+
+**Prohibited.** A single factory whose signature carries every field, most of them optional:
+
+```php
+MoneyFormat::from(scale: 4, symbol: '€', grouping: ',');
+```
+
+**Correct.** A baseline `default()` plus fluent `with*` copies that override only what differs:
+
+```php
+MoneyFormat::default()->withScale(scale: 4)->withGrouping(grouping: ',');
 ```
 
 ## Exceptions

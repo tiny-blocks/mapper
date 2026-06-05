@@ -41,23 +41,19 @@ Apply to `ci.yml` and to every additional workflow in `.github/workflows/`.
 5. `concurrency` is set at the workflow root with `cancel-in-progress: true` and a `group`
    expression scoped by the workflow's trigger, prefixed by the workflow's short purpose name
    (`ci`, `codeql`, `auto-assign`):
-   - `pull_request`: `<purpose>-${{ github.event.pull_request.number }}`.
-   - `issues`, or `issues` combined with `pull_request`:
-     `<purpose>-${{ github.event.issue.number || github.event.pull_request.number }}`.
-   - `push`, `schedule`, or both: `<purpose>-${{ github.ref }}`.
+    - `pull_request`: `<purpose>-${{ github.event.pull_request.number }}`.
+    - `issues`, or `issues` combined with `pull_request`:
+      `<purpose>-${{ github.event.issue.number || github.event.pull_request.number }}`.
+    - `push`, `schedule`, or both: `<purpose>-${{ github.ref }}`.
 6. `permissions` is declared at the workflow root with the minimum scope every job needs.
    Job-level `permissions` are allowed only when a specific job needs a narrower scope than the
    root, never broader.
 7. Every job sets `timeout-minutes`. Defaults: 5 for trivial steps (single API call, lightweight
    script), 15 for jobs with PHP setup or test runs, 30 for analysis-heavy jobs (CodeQL, security
    scanning). Adjust based on observed runtime when prior runs exist.
-8. Every action is pinned to a fixed major version tag written explicitly (`actions/checkout@v6`,
-   `shivammathur/setup-php@v2`). Never use `@latest`, `@main`, a branch name, or a commit SHA.
-   When the existing pin is an explicit minor or patch, derive the major version while preserving
-   the prefix style of the original tag (`@v2.1.0` → `@v2`, `@2.1.0` → `@2`). Web lookup is
-   required only when the existing pin is missing, ambiguous, or pointing to a non-version
-   reference. Example versions in this file or in the skill asset may be outdated and are not a
-   license to skip the lookup when it is required.
+8. Every action is pinned to a fixed, immutable ref a version tag at any granularity (major, minor, or patch) or a
+   commit SHA. Moving refs (branch names such as @main/@master, or @v with no version) are prohibited. Do not normalize
+   an explicit minor or patch pin down to its major, preserve the granularity the maintainer chose.
 9. Inline shell logic longer than 3 lines is extracted to a script in `scripts/ci/`.
 10. All text (workflow name, job names, step names, comments) uses American English with correct
     spelling and punctuation. Sentences and descriptions end with a period.

@@ -4,15 +4,9 @@ declare(strict_types=1);
 
 namespace Test\TinyBlocks\Mapper\Models;
 
-use ArrayIterator;
-use TinyBlocks\Mapper\IterableMappability;
-use TinyBlocks\Mapper\IterableMapper;
-
-final readonly class Inventory implements IterableMapper
+final readonly class Inventory
 {
-    use IterableMappability;
-
-    public function __construct(public ArrayIterator $stock)
+    public function __construct(public array $stocks, public string $location)
     {
     }
 }

@@ -99,7 +99,8 @@ Verify every item before producing any PHP code. If any item fails, revise befor
    Example with `toArray(KeyPreservation $keyPreservation = KeyPreservation::PRESERVE)`. The call
    `$collection->toArray(keyPreservation: KeyPreservation::PRESERVE)` becomes
    `$collection->toArray()`. Only pass the argument when the value differs from the default.
-9. No `else` or `else if` exists anywhere. Use early returns, polymorphism, or map dispatch instead.
+9. No `else` or `else if` exists anywhere. Use early returns, polymorphism, or map dispatch
+   instead. See "Polymorphism and tell-don't-ask".
 10. No abbreviations appear in identifiers. Use `$index` instead of `$i`, `$account` instead of
     `$acc`.
 11. No generic identifiers exist. Use domain-specific names instead. Examples are `$data` to
@@ -117,7 +118,8 @@ Verify every item before producing any PHP code. If any item fails, revise befor
     `src/Internal/` (implementation detail by definition, where the namespace is the abstraction
     boundary), and `setUp` or `tearDown` overrides in PHPUnit test classes. Outside these cases,
     inline trivial logic at the call site or extract it to a collaborator or value object.
-14. No logic is duplicated across two or more places (DRY).
+14. No logic is duplicated across two or more places (DRY). See "Duplication" for the resolution
+    under the inheritance and private-method constraints.
 15. No abstraction exists without real duplication or isolation need (KISS).
 16. No inline comments exist in `src/` or `tests/`, except `# TODO: <reason>` when implementation
     is unknown, uncertain, or intentionally deferred. Code is the documentation. Block comments
@@ -142,9 +144,10 @@ Verify every item before producing any PHP code. If any item fails, revise befor
     `match` over `switch`, first-class callables over `Closure::fromCallable()`, readonly promotion
     over manual assignment, enum methods over external switch or if chains, named arguments over
     positional ambiguity (except where excluded by rule 4), `Collection::map` over foreach
-    accumulation, and **unparenthesized constructor chaining** (PHP 8.4+):
-    `new Foo()->bar()` instead of `(new Foo())->bar()`. The parentheses around the `new`
-    expression are no longer required and add visual noise.
+    accumulation, concise standard regex character classes (`\w`, `\d`, `\s`, and their negations)
+    over their explicit equivalents (`[A-Za-z0-9_]`, `[0-9]`), and **unparenthesized constructor
+    chaining** (PHP 8.4+): `new Foo()->bar()` instead of `(new Foo())->bar()`. The parentheses
+    around the `new` expression are no longer required and add visual noise.
 23. All identifiers, comments, and documentation use American English. See "American English" for
     the spelling list.
 24. No method has more than three `return` statements. This bounds branching complexity and
@@ -152,7 +155,9 @@ Verify every item before producing any PHP code. If any item fails, revise befor
     more than three exit points is doing too much. Invariant violations `throw` a dedicated
     exception rather than returning, so guards rarely add return points. When branching still
     produces more than three returns, replace it with a `match` or map dispatch that resolves to a
-    single return, or extract a collaborator. See "Return statements".
+    single return, or extract a collaborator. When the branches turn on the runtime type of
+    polymorphic collaborator, the behavior belongs on that type instead. See "Return statements"
+    and "Polymorphism and tell-don't-ask".
 25. The string concatenation operator (`.`) is never used, in any position. A string that
     would be assembled by concatenation, whether it embeds a value or joins two or more
     strings, is built with `sprintf` and a `$template` variable (rule 19) instead. This
@@ -167,6 +172,9 @@ Verify every item before producing any PHP code. If any item fails, revise befor
     This exception is limited to placeholder-free constant literals. Runtime string
     assembly, and any constant that interpolates a value, still uses `sprintf` with a
     `$template`.
+26. Behavior that varies by the concrete type of type the library owns is a polymorphic method
+    on that type, never an `instanceof` or `get_class` branch. Behavior that depends on a
+    collaborator's state lives on that collaborator. See "Polymorphism and tell-don't-ask".
 
 ## Naming
 
@@ -318,10 +326,24 @@ Everything exposed on the public API for consumption carries PHPDoc per these ru
 The prohibitions above apply to **every form of PHPDoc** in the prohibited scope:
 method-level docblocks, property-level docblocks, inline `@var` annotations on local variables,
 and PHPDoc blocks placed above anonymous functions or closures inside method bodies. Inside
-`tests/`, zero PHPDoc is the rule with no exception. Inside `src/Internal/`, zero PHPDoc applies to
-concrete classes and collaborators, but interfaces carry PHPDoc per "When required". PHPStan errors
-that result from the missing annotations on the non-interface code route through `ignoreErrors`
-(see below).
+`tests/`, zero PHPDoc is the rule, save for the generics carve-out below. Inside `src/Internal/`,
+zero PHPDoc applies to concrete classes and collaborators, but interfaces carry PHPDoc per "When
+required", and the generics carve-out below still applies to those concrete classes. PHPStan
+errors that result from the missing annotations on the non-interface code route through
+`ignoreErrors` (see below).
+
+**Generics carve-out.** The prohibitions above are waived for PHPDoc that exists *purely to
+express generics* the native type system cannot: `@template`, `@extends`, `@implements`, and the
+`@param`/`@return`/`@var` tags whose sole purpose is to carry a type parameter (for example
+`Collection<TValue>`, `iterable<TValue>`, `Closure(TValue): bool`, `static<TValue>`). These tags
+are permitted wherever they are necessary for generic typing, including on **constructors**, on
+**concrete classes and collaborators inside `src/Internal/`**, and as a **bare-tag block with no
+summary line** (a summary would be the prohibited descriptive form). The waiver is strict: it
+covers only the type-parameter information. Descriptive or redundant PHPDoc (summaries, prose
+`@param`/`@return` descriptions, anything restating what the signature already says) stays
+prohibited everywhere. When the only missing annotation is non-generic (a plain iterable value
+type, a mixed-origin argument), the typed-array case below still applies and routes through
+`ignoreErrors`, not PHPDoc.
 
 The PHPDoc prohibitions above take priority over the typed-array case. When PHPStan at
 `level: max` flags a missing iterable value type (`missingType.iterableValue`,
@@ -581,6 +603,134 @@ $body = (new ServerRequest(method: 'GET', uri: 'https://api.example.com'))
 $body = new ServerRequest(method: 'GET', uri: 'https://api.example.com')
     ->withHeader('Accept', 'application/json')
     ->getBody();
+```
+
+## Duplication
+
+When two or more places share logic, extract it into a collaborator (a value object, or a class
+in `src/Internal/`), or move it onto a collaborator both call sites already depend on. The type
+that owns the data owns the derived behavior.
+
+A shared base class is not available: inheritance between concrete classes is prohibited (see
+"Inheritance and constructors"). A shared private helper is not available either: private methods
+on public classes are prohibited (rule 13). Composition is therefore the only mechanism, and
+leaving the duplication in place is never the resolution.
+
+**Prohibited.** The same derivation copied byte for byte into two types:
+
+```php
+final readonly class Exam
+{
+    public function __construct(public int $score) {}
+
+    public function grade(): Grade
+    {
+        return match (true) {
+            $this->score >= 90 => Grade::A,
+            $this->score >= 80 => Grade::B,
+            $this->score >= 70 => Grade::C,
+            default            => Grade::F
+        };
+    }
+}
+
+final readonly class Assignment
+{
+    public function __construct(public int $score) {}
+
+    public function grade(): Grade
+    {
+        return match (true) {
+            $this->score >= 90 => Grade::A,
+            $this->score >= 80 => Grade::B,
+            $this->score >= 70 => Grade::C,
+            default            => Grade::F
+        };
+    }
+}
+```
+
+**Correct.** The derivation lives once on the collaborator both types hold, and each delegates:
+
+```php
+final readonly class Score
+{
+    public function __construct(public int $value) {}
+
+    public function toGrade(): Grade
+    {
+        return match (true) {
+            $this->value >= 90 => Grade::A,
+            $this->value >= 80 => Grade::B,
+            $this->value >= 70 => Grade::C,
+            default            => Grade::F
+        };
+    }
+}
+
+final readonly class Exam
+{
+    public function __construct(public Score $score) {}
+
+    public function grade(): Grade
+    {
+        return $this->score->toGrade();
+    }
+}
+
+final readonly class Assignment
+{
+    public function __construct(public Score $score) {}
+
+    public function grade(): Grade
+    {
+        return $this->score->toGrade();
+    }
+}
+```
+
+## Polymorphism and tell-don't-ask
+
+This refines rules 9 and 24. A `match` on an enum, on a scalar, or on a value condition stays
+correct. What is prohibited is branching on the runtime type of polymorphic collaborator the
+library defines: when behavior differs across the concrete implementations of an interface the
+library owns, that behavior is a method on the interface, resolved by the object itself, never an
+`instanceof` or `get_class` chain at the call site.
+
+A consumer is outside this rule. A consumer matching on a sealed type the library exposes (for
+example, translating a parsed tree into its own store) cannot add methods to the library's types,
+so its `instanceof` is legitimate. The rule binds the library's own code.
+
+Tell-don't-ask. Behavior that depends on a collaborator's state belongs to the collaborator. Do
+not read a collaborator's fields to recompute a result the collaborator should produce. Ask it for
+the result, not for its parts. A getter exposes a value the caller needs as data, it is not a
+license to reimplement the collaborator's logic at the call site.
+
+**Prohibited.** Dispatching on the concrete type of interface the library owns:
+
+```php
+return match (true) {
+    $discount instanceof Percentage => $amount->multiplyBy(factor: $discount->rate()),
+    $discount instanceof Fixed      => $amount->subtract(other: $discount->amount())
+};
+```
+
+**Correct.** The behavior is a method on the interface, resolved by the object:
+
+```php
+return $discount->applyTo(amount: $amount);
+```
+
+**Prohibited.** Reading a collaborator's parts to recompute what it already owns:
+
+```php
+$doubled = Money::of(amount: $price->amount() * 2, currency: $price->currency());
+```
+
+**Correct.** Telling the collaborator to produce the result:
+
+```php
+$doubled = $price->multiplyBy(factor: 2);
 ```
 
 ## Return statements

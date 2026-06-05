@@ -40,6 +40,8 @@ Verify every item before producing any test code. If any item fails, revise befo
    lifecycle hooks (`setUp`, `setUpBeforeClass`, `tearDown`, `tearDownAfterClass`) and data
    providers. Setup logic complex enough to extract belongs in a dedicated fixture class.
 6. Test only the public API. Never assert on private state or `Internal/` classes directly.
+   One narrow, last-resort exception covers irreducible internal elements. See "White-box
+   coverage of irreducible internals".
 7. Test the behavior that **raises** an exception, never the exception itself. Exception classes
    represent invariant violations and are value objects, not the subject of behavior tests. A
    test constructs the conditions, invokes the public method that is supposed to fail, and
@@ -78,6 +80,21 @@ Verify every item before producing any test code. If any item fails, revise befo
     "Coverage and mutation discipline".
 16. Member ordering in test classes follows `php-library-code-style.md` rule 6 (PHPUnit
     test-class sub-grouping).
+
+## Generics in test PHPDoc
+
+The "zero PHPDoc anywhere inside `tests/`" rule (defined in `php-library-code-style.md`) has one
+narrow exception: PHPDoc that exists *purely to express generics* the native type system cannot.
+A test fixture that extends a generic public type carries the type argument with `@extends` (for
+example `@extends Collection<Invoice>` on an `Invoices` fixture), and a generics-only `@var` may
+pin a type parameter at an inference point where an imprecise result feeds a typed sink (for
+example `/** @var Collection<Shipment> $shipments */` before passing a mapped collection to
+`Shipments::createFrom(...)`). These tags carry only the type-parameter information, never a
+summary or prose description. Every other form of PHPDoc (summaries, `@param`/`@return`
+descriptions on test methods, fixtures, data providers, or anonymous classes) stays prohibited.
+This is the same carve-out stated in `php-library-code-style.md` under "When prohibited",
+restated here because it most often surfaces on collection fixtures and inference points in
+`tests/`.
 
 ## Structure: Given/When/Then (BDD)
 
@@ -316,8 +333,43 @@ Conventions for naming and locating test doubles (mocks, spies, stubs, fakes, du
 - Never suppress mutants via `infection.json.dist` or any other mechanism.
 - If a line or mutation cannot be covered or killed, the design is wrong. Refactor the
   production code to make it testable. Never work around the tool.
+- The sole exception is an irreducible internal element (a non-functional memoization
+  cache, or the private constructor of a static-only surface) that cannot be reached
+  publicly without harming the design. It is covered or killed through a reflection-based
+  white-box test, never through suppression. See "White-box coverage of irreducible
+  internals".
 
 Canonical thresholds (MSI 100, covered MSI 100) live in `php-library-tooling.md`. They are
 enforced by `infection.json.dist`. Achieving MSI 100 implies effective full coverage of `src/`
 because every mutation must be killed by an assertion. This file covers only the behavioral
 rules that complement those thresholds.
+
+## White-box coverage of irreducible internals
+
+Rules 6 and 15 are near-absolute: tests exercise the public API, refactoring is the response
+when a line or mutation resists coverage, and code is never hidden from coverage or mutation.
+They yield in one narrow case: an *irreducible* internal element that cannot be reached
+through the public API without either removing a legitimate non-functional optimization or
+defeating a deliberate design. Two such elements recur:
+
+- **Memoization caches.** A purely non-functional cache (a resolved-mapping cache, a
+  shared-instance cache, a reflection-descriptor cache) whose removal leaves behavior
+  identical. The mutant that drops the cache is an equivalent mutant: no public observation
+  distinguishes the cached path from the recomputed one, so no public-API test can kill it.
+- **Intentionally-uncallable members.** The private constructor of a static-only surface (a
+  class that exists solely to expose static factories and must never be instantiated). It is
+  never executed through any public path, so its line stays uncovered by construction.
+
+For these, and only these, a white-box test is permitted as a last resort: reflecting into
+`Internal/` private state to assert that memoization holds, or reflection-invoking an
+uncallable constructor so its line is covered. Such a test still follows the BDD structure
+and `testXxxWhenYyyThenZzz` naming, and the repeated-invocation `@When` exception (checklist
+item 3) already covers the memoization case.
+
+This exception covers code. It never hides it. `@codeCoverageIgnore`, coverage-excluding
+configuration, and mutant suppression remain prohibited without exception. The irreducible
+element is killed or covered honestly through reflection, not excluded from the metric. The
+burden is on demonstrating irreducibility: if the line or mutation can be reached through the
+public API, or if a proportionate refactor would expose it without harming the design, this
+exception does not apply and the public-API test is required. White-box access is never a
+convenience and never the first resort.
