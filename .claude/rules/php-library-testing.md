@@ -142,9 +142,6 @@ public function testAddMoneyWhenDifferentCurrenciesThenCurrencyMismatch(): void
 }
 ```
 
-Use `@And` for complementary preconditions or actions within the same scenario, avoiding
-consecutive `@Given` or `@When` tags.
-
 ## Testing exceptions
 
 Exception classes are value objects describing an invariant violation. They are not the subject
@@ -229,7 +226,7 @@ does not cover.** Message, code, and class are covered by PHPUnit (`expectExcept
 `expectExceptionMessage`, `expectExceptionMessageMatches`, `expectExceptionCode`): use those
 methods, not `try`/`catch`. The only case that warrants `try`/`catch` is inspecting accessors
 that PHPUnit cannot reach, notably `getPrevious()` for chain inspection, or domain-specific
-accessors on a `TransportFailure` (`url()`, `method()`, `reason()`).
+accessors on a `HttpNetworkFailed` (`url()`, `method()`, `reason()`).
 
 **Prohibited.** `try`/`catch` to assert message:
 

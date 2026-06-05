@@ -29,7 +29,7 @@ final readonly class DateTimeResolver implements Resolver
         $candidate = is_int($value) ? sprintf($template, $value) : $value;
 
         try {
-            return new $concrete($candidate);
+            return new $concrete(datetime: $candidate);
         } catch (Exception $failure) {
             $template = 'Cannot build %s from "%s": %s.';
 

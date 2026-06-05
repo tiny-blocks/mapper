@@ -173,8 +173,11 @@ Verify every item before producing any PHP code. If any item fails, revise befor
     assembly, and any constant that interpolates a value, still uses `sprintf` with a
     `$template`.
 26. Behavior that varies by the concrete type of type the library owns is a polymorphic method
-    on that type, never an `instanceof` or `get_class` branch. Behavior that depends on a
-    collaborator's state lives on that collaborator. See "Polymorphism and tell-don't-ask".
+    on that type, never an `instanceof`, `get_class`, or enum-case branch. A value or behavior an
+    enum case owns (a token, a flag about the case's nature, a derived value) lives on the enum as
+    a predicate or vocabulary method, called at the site instead of comparing the case. Behavior
+    that depends on a collaborator's state lives on that collaborator. See "Polymorphism and
+    tell-don't-ask".
 
 ## Naming
 
@@ -185,7 +188,9 @@ Verify every item before producing any PHP code. If any item fails, revise befor
   full banlist of generic and anemic names.
 - Booleans use predicate form. Examples are `isActive`, `hasPermission`, `wasProcessed`.
 - Collections are always plural. Examples are `$orders`, `$lines`.
-- Methods returning `bool` use prefixes `is`, `has`, `can`, `was`, `should`.
+- A boolean method reads as a predicate, using an `is`/`has`/`can`/`was`/`should` prefix or a
+  third-person verb that reads as a yes/no question, such as `contains`, `matches`, `supports`,
+  `equals`, or `omits`.
 
 ## Class self-references
 
@@ -592,7 +597,7 @@ everywhere a `new` is followed by a method call.
 **Prohibited.** Parentheses around the `new` expression:
 
 ```php
-$body = (new ServerRequest(method: 'GET', uri: 'https://api.example.com'))
+$body = (new ServerRequest(uri: 'https://api.example.com', method: 'GET'))
     ->withHeader('Accept', 'application/json')
     ->getBody();
 ```
@@ -600,7 +605,7 @@ $body = (new ServerRequest(method: 'GET', uri: 'https://api.example.com'))
 **Correct.** No parentheses:
 
 ```php
-$body = new ServerRequest(method: 'GET', uri: 'https://api.example.com')
+$body = new ServerRequest(uri: 'https://api.example.com', method: 'GET')
     ->withHeader('Accept', 'application/json')
     ->getBody();
 ```
@@ -697,14 +702,31 @@ library defines: when behavior differs across the concrete implementations of an
 library owns, that behavior is a method on the interface, resolved by the object itself, never an
 `instanceof` or `get_class` chain at the call site.
 
+The opening sentence holds only for control flow. When a branch on an enum case yields a value or
+behavior that belongs to the case itself, a token, a flag about the case's nature, or a derived
+value, that value or behavior is a method on the enum: a predicate `isXxx()`, or a vocabulary
+method that returns the value, called at the site instead of comparing the case. Comparing a case
+(`$direction === Order::ASCENDING`, `match ($direction)`) stays correct for control flow whose
+outcome is not a property of the case. This is the enum form of tell-don't-ask, and the companion
+of the modeling rule that enums carry methods only when those methods hold vocabulary meaning (see
+`php-library-modeling.md`, "Enums"): a case that drives a derived value is exactly that vocabulary.
+
 A consumer is outside this rule. A consumer matching on a sealed type the library exposes (for
 example, translating a parsed tree into its own store) cannot add methods to the library's types,
 so its `instanceof` is legitimate. The rule binds the library's own code.
 
+A type the library owns may `instanceof` its own internal types at construction or registration
+time, to invoke behavior that exists only on the concrete type and that cannot be lifted onto a
+public extension interface without breaking external implementers. The minimal public interface
+outweighs the local, build-time type check.
+
 Tell-don't-ask. Behavior that depends on a collaborator's state belongs to the collaborator. Do
 not read a collaborator's fields to recompute a result the collaborator should produce. Ask it for
 the result, not for its parts. A getter exposes a value the caller needs as data, it is not a
-license to reimplement the collaborator's logic at the call site.
+license to reimplement the collaborator's logic at the call site. Tell-don't-ask binds the types
+the library owns. Reading a value off a type the library does not own (a dependency's value object,
+a PSR type) and computing with it is interop, not a violation: the library cannot add a method to a
+type it does not control. The rule still binds the library's own types.
 
 **Prohibited.** Dispatching on the concrete type of interface the library owns:
 
@@ -719,6 +741,35 @@ return match (true) {
 
 ```php
 return $discount->applyTo(amount: $amount);
+```
+
+**Prohibited.** Comparing an enum case to produce a value the case owns:
+
+```php
+$token = match ($direction) {
+    Order::ASCENDING  => '',
+    Order::DESCENDING => '-'
+};
+```
+
+**Correct.** A vocabulary method on the enum returns the value, called at the site:
+
+```php
+enum Order: string
+{
+    case ASCENDING = 'asc';
+    case DESCENDING = 'desc';
+
+    public function token(): string
+    {
+        return match ($this) {
+            self::ASCENDING  => '',
+            self::DESCENDING => '-'
+        };
+    }
+}
+
+$token = $direction->token();
 ```
 
 **Prohibited.** Reading a collaborator's parts to recompute what it already owns:
@@ -792,9 +843,9 @@ one parameter per line only when the signature genuinely overflows.
 
 ```php
 private function __construct(
+    public ExternalReference $id,
     public Money $amount,
-    public OrderContext $context,
-    public ExternalReference $id
+    public OrderContext $context
 ) {
 }
 ```
@@ -802,7 +853,7 @@ private function __construct(
 **Correct.** Single line within 120 characters:
 
 ```php
-private function __construct(public Money $amount, public OrderContext $context, public ExternalReference $id)
+private function __construct(public ExternalReference $id, public Money $amount, public OrderContext $context)
 {
 }
 ```

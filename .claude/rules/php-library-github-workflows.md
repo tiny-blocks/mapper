@@ -51,7 +51,7 @@ Apply to `ci.yml` and to every additional workflow in `.github/workflows/`.
 7. Every job sets `timeout-minutes`. Defaults: 5 for trivial steps (single API call, lightweight
    script), 15 for jobs with PHP setup or test runs, 30 for analysis-heavy jobs (CodeQL, security
    scanning). Adjust based on observed runtime when prior runs exist.
-8. Every action is pinned to a fixed, immutable ref a version tag at any granularity (major, minor, or patch) or a
+8. Every action is pinned to a fixed, immutable ref: a version tag at any granularity (major, minor, or patch) or a
    commit SHA. Moving refs (branch names such as @main/@master, or @v with no version) are prohibited. Do not normalize
    an explicit minor or patch pin down to its major, preserve the granularity the maintainer chose.
 9. Inline shell logic longer than 3 lines is extracted to a script in `scripts/ci/`.

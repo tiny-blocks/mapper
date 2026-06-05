@@ -9,13 +9,13 @@ use IteratorAggregate;
 use TinyBlocks\Mapper\IterableMappable;
 use TinyBlocks\Mapper\Mapper;
 
-final class Notes implements IteratorAggregate, IterableMappable
+final readonly class Notes implements IteratorAggregate, IterableMappable
 {
-    private function __construct(public readonly iterable $elements)
+    private function __construct(public iterable $elements)
     {
     }
 
-    public static function createFrom(iterable $elements): static
+    public static function createFrom(iterable $elements): Notes
     {
         return new Notes(elements: $elements);
     }

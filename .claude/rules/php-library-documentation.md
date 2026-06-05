@@ -113,11 +113,10 @@ exactly.
 
 Code examples fall into two categories.
 
-**Self-contained examples** include at least one of these: a `use` statement, a `class`/`enum`/`interface`/`trait`/
-`function`
-declaration, or more than 3 lines of executable code. They
-open with `<?php`, a blank line, and `declare(strict_types=1);`, and carry every `use` statement
-required to compile. A reader can copy the block into a file and run it.
+**Self-contained examples** include at least one of these: a `use` statement, a
+`class`/`enum`/`interface`/`trait`/`function` declaration, or more than 3 lines of executable code.
+They open with `<?php`, a blank line, and `declare(strict_types=1);`, and carry every `use`
+statement required to compile. A reader can copy the block into a file and run it.
 
 ```php
 <?php

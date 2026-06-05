@@ -645,8 +645,8 @@ nested wrappers until it reaches the scalar.
 
 A property reduces to a scalar when its type is a native scalar, a backed enum, a `DateTimeInterface`, a type
 annotated with `#[ScalarCodec]`, or, recursively, another single-property type whose own property reduces to a
-scalar. A pure enum reduces to its case name. A `Traversable` never reduces, and neither does an object with two
-or more properties.
+scalar. A pure enum reduces to its case name. A `Traversable` never reduces, and neither does an object
+with two nor more properties.
 
 A priority label that wraps a backed enum and declares no mapping.
 
@@ -826,7 +826,7 @@ enum Severity
 ```
 
 The profile is hydrated through the mapper from a source array, so `omitting` operates on a visible typed
-property. The `$refunds` collection from the previous section is reindexed with numeric keys.
+property. The `$refunds` collection from the previous section is reindex with numeric keys.
 
 ```php
 <?php

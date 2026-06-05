@@ -111,7 +111,7 @@ PHPDoc). Each entry follows these rules:
 
 ```neon
 ignoreErrors:
-    # Trait method intentionally unused by the consuming aggregate; reflection wires it.
+    # Trait method intentionally unused by the consuming aggregate. Reflection wires it.
     - identifier: trait.unused
       path: src/Internal/EventualAggregateRootBehavior.php
 ```

@@ -27,11 +27,8 @@ final class Engine
 
     private readonly FactoryInvoker $factoryInvoker;
 
-    public function __construct(
-        array $mappings,
-        private readonly NamingStrategy $strategy,
-        bool $rejectUnknownKeys
-    ) {
+    public function __construct(array $mappings, private readonly NamingStrategy $strategy, bool $rejectUnknownKeys)
+    {
         foreach ($mappings as $registeredType => $mapping) {
             if ($mapping instanceof SubtypeMapping) {
                 $mapping->ensureCasesAreSubtypesOf(root: $registeredType);

@@ -44,7 +44,9 @@ algorithm. If any item fails, revise before outputting.
 12. Exceptions are pure. No transport-specific fields (HTTP status in `code`, formatted message
     for end-user display). They signal invariant violations only, never control flow.
 13. Enums are PHP backed enums. They include methods only when those methods carry vocabulary
-    meaning.
+    meaning. A value or behavior a case owns lives on the enum as that method, called instead of a
+    `match` on the case at the site. See "Polymorphism and tell-don't-ask" in
+    `php-library-code-style.md`.
 14. Extension points use `class` instead of `final readonly class`. They expose a private
     constructor with static factory methods as the only creation path. Internal state is
     injected via the constructor.
@@ -259,7 +261,11 @@ if ($value < 0 || $value > 16) {
 
 - Are PHP backed enums.
 - Include methods only when those methods carry vocabulary meaning. Examples are
-  `Order::ASCENDING_KEY` and `RoundingMode::apply()`.
+  `OrderStatus::isFinal()` and `RoundingMode::apply()`.
+- A value or behavior a case owns (a token, a flag, a derived value) is one of those vocabulary
+  methods, a predicate `isXxx()` or a method returning the value, called at the site instead of a
+  `match` comparing the case. This is the enum form of tell-don't-ask. See "Polymorphism and
+  tell-don't-ask" in `php-library-code-style.md`.
 
 ## Extension points
 

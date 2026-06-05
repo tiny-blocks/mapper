@@ -48,10 +48,10 @@ final class HydrationTest extends TestCase
         $mapper = Mapper::create();
 
         /** @When toObjectOrNull is called with a null source */
-        $result = $mapper->toObjectOrNull(type: Amount::class, source: null);
+        $amount = $mapper->toObjectOrNull(type: Amount::class, source: null);
 
         /** @Then the result is null */
-        self::assertNull($result);
+        self::assertNull($amount);
     }
 
     public function testToObjectWhenJsonStringSourceThenObjectIsBuilt(): void
@@ -89,10 +89,10 @@ final class HydrationTest extends TestCase
         $mapper = Mapper::create();
 
         /** @When toObjectOrNull is called with an array source */
-        $result = $mapper->toObjectOrNull(type: Amount::class, source: ['amount' => 1, 'currency' => 'USD']);
+        $amount = $mapper->toObjectOrNull(type: Amount::class, source: ['amount' => 1, 'currency' => 'USD']);
 
         /** @Then the result is the corresponding object */
-        self::assertEquals(new Amount(amount: 1, currency: Currency::USD), $result);
+        self::assertEquals(new Amount(amount: 1, currency: Currency::USD), $amount);
     }
 
     public function testToObjectWhenSourceIsArrayIteratorThenObjectIsBuilt(): void
