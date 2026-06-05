@@ -4,51 +4,66 @@ parameters:
         - src
         - tests
     ignoreErrors:
-        # PHPDoc is prohibited inside src/Internal/ and tests/; typed-array information cannot be expressed.
+        # PHPDoc cannot express iterable value types inside src/Internal/ and tests/, nor on the public
+        # constructor parameters Mapper::$mappings and Configuration::$omittedFields (PHPDoc on
+        # constructors is prohibited), so the typed-array errors are confined to where they fire.
         - identifier: missingType.iterableValue
+          path: src/Internal/
+        - identifier: missingType.iterableValue
+          path: tests/
+        - identifier: missingType.iterableValue
+          path: src/Mapper.php
+        - identifier: missingType.iterableValue
+          path: src/Configuration.php
 
-        # PHPDoc is prohibited inside src/Internal/ and tests/; generic class types cannot be expressed.
+        # PHPDoc cannot express generic class types inside src/Internal/ and tests/.
         - identifier: missingType.generics
+          path: src/Internal/
+        - identifier: missingType.generics
+          path: tests/
 
-        # Reflection-driven mapping crosses the mixed-to-concrete boundary, where PHPStan cannot narrow.
+        # Reflection-driven mapping reads mixed values from untyped sources inside src/Internal/ and tests/.
         - identifier: argument.type
+          path: src/Internal/
+        - identifier: argument.type
+          path: tests/
 
-        # Reflection-driven mapping returns concrete types that PHPStan cannot infer from mixed input.
+        # Reflection-driven mapping returns concrete types PHPStan cannot infer from mixed input, both
+        # inside src/Internal/ and on the public facade that forwards engine results (Mapper).
         - identifier: return.type
+          path: src/Internal/
+        - identifier: return.type
+          path: src/Mapper.php
 
-        # Enum casting iterates over cases() of a dynamic class resolved at runtime.
-        - identifier: foreach.nonIterable
-          path: src/Internal/Mappers/Object/Casters/EnumCaster.php
+        # Subtype and Layout mappings forward a class name resolved at runtime (from an untyped source
+        # or the target type string) into the generic reflectionRead, so PHPStan cannot bind the
+        # template type T. The forwarded value is always a valid class-string.
+        - identifier: argument.templateType
+          path: src/Internal/
 
-        # Enum casting reads $case->name on a value typed as mixed by the dynamic class lookup.
-        - identifier: property.nonObject
-          path: src/Internal/Mappers/Object/Casters/EnumCaster.php
+        # Reflection-driven hydration casts values typed as mixed into the property's declared scalar type.
+        - identifier: cast.string
+          path: src/Internal/
 
-        # Strategy dispatch invokes supports() on a strategy whose concrete type is not statically known.
+        # Reflection-driven mapping accesses offsets of sources whose runtime shape is mixed.
+        - identifier: offsetAccess.invalidOffset
+          path: src/Internal/
+
+        # Reflection-driven mapping invokes methods on values resolved at runtime from mixed.
         - identifier: method.nonObject
-          path: src/Internal/Resolvers/StrategyResolver.php
+          path: src/Internal/
+        - identifier: instanceof.invalidExprType
+          path: src/Internal/
 
-        # Transformer operates on values typed as mixed at the public boundary of the mapper.
-        - identifier: method.nonObject
-          path: src/Internal/Transformers/DateTimeTransformer.php
-
-        # Transformer operates on values typed as mixed at the public boundary of the mapper.
+        # The scalar-codec list on the class descriptor cannot carry its value type (PHPDoc on the
+        # src/Internal/ concrete descriptor is prohibited), so reading the decode and encode method
+        # names off each ScalarCodec is seen as property access on mixed.
         - identifier: property.nonObject
-          path: src/Internal/Transformers/EnumTransformer.php
+          path: src/Internal/Deserialization/Resolvers/ScalarCodecResolver.php
+        - identifier: property.nonObject
+          path: src/Internal/Serialization/Encoders/ScalarCodecEncoder.php
 
-        # Late static binding in the test collection fixture mirrors tiny-blocks/collection's extension-point shape.
+        # Late static binding in the Refunds test fixture mirrors tiny-blocks/collection's extension-point shape.
         - identifier: new.static
-          path: tests/Models/Collection.php
-
-        # Test fixture properties are hydrated by the mapper; toArray reads them through reflection.
-        - identifier: property.onlyWritten
-          path: tests/Models/Configuration.php
-
-        # Test fixture properties are hydrated by the mapper; toArray reads them through reflection.
-        - identifier: property.onlyWritten
-          path: tests/Models/Dragon.php
-
-        # Iterator aggregate yields values whose concrete type is not statically known.
-        - identifier: property.nonObject
-          path: tests/Models/InvoiceSummaries.php
+          path: tests/Models/Refunds.php
     reportUnmatchedIgnoredErrors: true

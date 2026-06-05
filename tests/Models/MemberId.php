@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Test\TinyBlocks\Mapper\Models;
 
-use TinyBlocks\Mapper\ObjectMappability;
-use TinyBlocks\Mapper\ObjectMapper;
-
-final readonly class MemberId implements ObjectMapper
+final readonly class MemberId
 {
-    use ObjectMappability;
-
-    public function __construct(public Uuid $value)
+    public function __construct(private string $value)
     {
+    }
+
+    public function value(): string
+    {
+        return $this->value;
     }
 }
