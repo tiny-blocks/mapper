@@ -312,11 +312,14 @@ $mapper = Mapper::create()
     ->withNaming(namingStrategy: SnakeCase::create())
     ->withMapping(type: Studio::class, mapping: Layout::from(paths: []));
 
-$studio = $mapper->toObject(type: Studio::class, source: [
-    'main_camera_serial_number' => 'sn-1',
-    'main_camera_shot_count'    => 7,
-    'tag'                       => 'studio-a'
-]);
+$studio = $mapper->toObject(
+    type: Studio::class,
+    source: [
+        'main_camera_serial_number' => 'sn-1',
+        'main_camera_shot_count'    => 7,
+        'tag'                       => 'studio-a'
+    ]
+);
 ```
 
 The empty `paths` array means every column is derived from the property prefix. A non-empty array overrides
@@ -379,10 +382,7 @@ $mapper = Mapper::create()->withMapping(
     mapping: Layout::from(paths: ['memberId' => new JsonColumn(column: 'member')])
 );
 
-$owner = $mapper->toObject(
-    type: Owner::class,
-    source: ['member' => '{"value":"m-1"}', 'name' => 'Alice']
-);
+$owner = $mapper->toObject(type: Owner::class, source: ['member' => '{"value":"m-1"}', 'name' => 'Alice']);
 ```
 
 ### Collections that map themselves
@@ -464,10 +464,13 @@ use TinyBlocks\Mapper\Mapper;
 
 $mapper = Mapper::create();
 
-$refunds = $mapper->toObject(type: Refunds::class, source: [
-    ['reference' => 'r-1', 'amount' => ['amount' => 100, 'currency' => 'BRL']],
-    ['reference' => 'r-2', 'amount' => ['amount' => 200, 'currency' => 'BRL']]
-]);
+$refunds = $mapper->toObject(
+    type: Refunds::class,
+    source: [
+        ['reference' => 'r-1', 'amount' => ['amount' => 100, 'currency' => 'BRL']],
+        ['reference' => 'r-2', 'amount' => ['amount' => 200, 'currency' => 'BRL']]
+    ]
+);
 ```
 
 The `tiny-blocks/collection` library ships this behavior built in. Its `Collection` base class already
@@ -786,9 +789,10 @@ the registry, just as a top-level factory mapping does.
 
 ### Configuration and naming
 
-`Configuration` carries per-call output options. The default preserves keys and omits no fields. `omitting`
-excludes properties from the output. `discardingKeys` reindexes iterable content with numeric keys, switching
-the underlying `KeyPreservation` from `PRESERVE` to `DISCARD`.
+`Configuration` carries per-call output options. The default preserves keys, omits no fields, and keeps
+null-valued properties. `omitting` excludes properties from the output. `omittingNulls` drops every object
+property whose value is null, recursing into nested objects. `discardingKeys` reindexes iterable content with
+numeric keys, switching the underlying `KeyPreservation` from `PRESERVE` to `DISCARD`.
 
 A profile with a name, an optional title, a creation timestamp, and a severity.
 
@@ -838,22 +842,33 @@ use TinyBlocks\Mapper\Mapper;
 
 $mapper = Mapper::create();
 
-$profile = $mapper->toObject(type: Profile::class, source: [
-    'name'      => 'Alice',
-    'title'     => 'Owner',
-    'createdAt' => '2026-01-01T00:00:00+00:00',
-    'severity'  => 'HIGH'
-]);
-
-$array = $mapper->toArray(
-    source: $profile,
-    configuration: Configuration::default()->omitting('title')
+$profile = $mapper->toObject(
+    type: Profile::class,
+    source: [
+        'name'      => 'Alice',
+        'title'     => 'Owner',
+        'createdAt' => '2026-01-01T00:00:00+00:00',
+        'severity'  => 'HIGH'
+    ]
 );
 
-$reindex = $mapper->toArray(
-    source: $refunds,
-    configuration: Configuration::default()->discardingKeys()
+$array = $mapper->toArray(source: $profile, configuration: Configuration::default()->omitting('title'));
+
+$reindex = $mapper->toArray(source: $refunds, configuration: Configuration::default()->discardingKeys());
+
+$draft = $mapper->toObject(
+    type: Profile::class,
+    source: [
+        'name'      => 'Alice',
+        'title'     => null,
+        'createdAt' => '2026-01-01T00:00:00+00:00',
+        'severity'  => 'HIGH'
+    ]
 );
+
+# The explicit null title is dropped, so the output is:
+# ['name' => 'Alice', 'createdAt' => '2026-01-01T00:00:00+00:00', 'severity' => 'HIGH']
+$withoutNulls = $mapper->toArray(source: $draft, configuration: Configuration::default()->omittingNulls());
 ```
 
 `NamingStrategy` is the interface controlling how source keys translate to property names. `Identity` (the

@@ -5,22 +5,29 @@ declare(strict_types=1);
 namespace TinyBlocks\Mapper;
 
 /**
- * Per-call serialization options: key preservation and omitted fields.
+ * Per-call serialization options: key preservation, omitted fields, and null omission.
  */
 final readonly class Configuration
 {
-    private function __construct(private array $omittedFields, private KeyPreservation $keyPreservation)
-    {
+    private function __construct(
+        private array $omittedFields,
+        private KeyPreservation $keyPreservation,
+        private NullPreservation $nullPreservation
+    ) {
     }
 
     /**
-     * Creates the default configuration: keys preserved, nothing omitted.
+     * Creates the default configuration: keys preserved, nothing omitted, null-valued properties kept.
      *
      * @return Configuration The default instance.
      */
     public static function default(): Configuration
     {
-        return new Configuration(omittedFields: [], keyPreservation: KeyPreservation::PRESERVE);
+        return new Configuration(
+            omittedFields: [],
+            keyPreservation: KeyPreservation::PRESERVE,
+            nullPreservation: NullPreservation::KEEP
+        );
     }
 
     /**
@@ -44,8 +51,19 @@ final readonly class Configuration
     {
         return new Configuration(
             omittedFields: [...$this->omittedFields, ...$fields],
-            keyPreservation: $this->keyPreservation
+            keyPreservation: $this->keyPreservation,
+            nullPreservation: $this->nullPreservation
         );
+    }
+
+    /**
+     * Tells whether properties whose value is null are omitted from serialization.
+     *
+     * @return bool True when null-valued properties are omitted, false otherwise.
+     */
+    public function omitsNulls(): bool
+    {
+        return $this->nullPreservation->shouldOmitNulls();
     }
 
     /**
@@ -60,12 +78,30 @@ final readonly class Configuration
     }
 
     /**
+     * Returns a copy that omits properties whose value is null from serialization.
+     *
+     * @return Configuration The new instance.
+     */
+    public function omittingNulls(): Configuration
+    {
+        return new Configuration(
+            omittedFields: $this->omittedFields,
+            keyPreservation: $this->keyPreservation,
+            nullPreservation: NullPreservation::OMIT
+        );
+    }
+
+    /**
      * Returns a copy that discards array keys of iterable content.
      *
      * @return Configuration The new instance.
      */
     public function discardingKeys(): Configuration
     {
-        return new Configuration(omittedFields: $this->omittedFields, keyPreservation: KeyPreservation::DISCARD);
+        return new Configuration(
+            omittedFields: $this->omittedFields,
+            keyPreservation: KeyPreservation::DISCARD,
+            nullPreservation: $this->nullPreservation
+        );
     }
 }

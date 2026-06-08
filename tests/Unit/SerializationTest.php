@@ -31,6 +31,7 @@ use Test\TinyBlocks\Mapper\Models\Severity;
 use Test\TinyBlocks\Mapper\Models\SpecializedTag;
 use Test\TinyBlocks\Mapper\Models\TaxId;
 use Test\TinyBlocks\Mapper\Models\Wallet;
+use Test\TinyBlocks\Mapper\Models\Workspace;
 use TinyBlocks\Mapper\Configuration;
 use TinyBlocks\Mapper\Exceptions\UnknownSubtype;
 use TinyBlocks\Mapper\Exceptions\UnmappableSource;
@@ -85,6 +86,31 @@ final class SerializationTest extends TestCase
         self::assertNull($array);
     }
 
+    public function testToArrayWhenKeepingNullsThenNullPropertiesRemain(): void
+    {
+        /** @Given a mapper with default settings */
+        $mapper = Mapper::create();
+
+        /** @When a Profile with a null title is serialized under the default configuration */
+        $array = $mapper->toArray(source: new Profile(
+            name: 'Gustavo',
+            title: null,
+            severity: Severity::LOW,
+            createdAt: new DateTimeImmutable('2024-01-02T03:04:05+00:00')
+        ));
+
+        /** @Then the null-valued title is kept in the output */
+        self::assertSame(
+            [
+                'name'      => 'Gustavo',
+                'title'     => null,
+                'severity'  => 'LOW',
+                'createdAt' => '2024-01-02T03:04:05+00:00'
+            ],
+            $array
+        );
+    }
+
     public function testToArrayWhenSnakeCaseNamingThenKeysAreSnakeCased(): void
     {
         /** @Given a mapper with snake_case naming */
@@ -134,6 +160,49 @@ final class SerializationTest extends TestCase
 
         /** @Then keys match the property names */
         self::assertSame(['amount' => 50, 'currency' => 'BRL'], $array);
+    }
+
+    public function testToArrayWhenOmittingNullsAndFieldsThenBothAreOmitted(): void
+    {
+        /** @Given a mapper with default settings */
+        $mapper = Mapper::create();
+
+        /** @When a Profile with a null title is serialized omitting the name field and nulls */
+        $array = $mapper->toArray(
+            source: new Profile(
+                name: 'Gustavo',
+                title: null,
+                severity: Severity::LOW,
+                createdAt: new DateTimeImmutable('2024-01-02T03:04:05+00:00')
+            ),
+            configuration: Configuration::default()->omitting('name')->omittingNulls()
+        );
+
+        /** @Then the explicitly omitted name and the null-valued title are both absent */
+        self::assertSame(['severity' => 'LOW', 'createdAt' => '2024-01-02T03:04:05+00:00'], $array);
+    }
+
+    public function testToArrayWhenOmittingNullsThenNullPropertiesAreOmitted(): void
+    {
+        /** @Given a mapper with default settings */
+        $mapper = Mapper::create();
+
+        /** @When a Profile with a null title is serialized omitting nulls */
+        $array = $mapper->toArray(
+            source: new Profile(
+                name: 'Gustavo',
+                title: null,
+                severity: Severity::LOW,
+                createdAt: new DateTimeImmutable('2024-01-02T03:04:05+00:00')
+            ),
+            configuration: Configuration::default()->omittingNulls()
+        );
+
+        /** @Then the null-valued title is absent and the non-null properties remain */
+        self::assertSame(
+            ['name' => 'Gustavo', 'severity' => 'LOW', 'createdAt' => '2024-01-02T03:04:05+00:00'],
+            $array
+        );
     }
 
     public function testToJsonOrNullWhenSourceIsPresentThenJsonMatchesToJson(): void
@@ -200,6 +269,35 @@ final class SerializationTest extends TestCase
 
         /** @Then the backed enum is emitted as its value */
         self::assertSame(['amount' => 1, 'currency' => 'USD'], $array);
+    }
+
+    public function testToArrayWhenOmittingNullsThenNestedNullPropertiesAreOmitted(): void
+    {
+        /** @Given a mapper with default settings */
+        $mapper = Mapper::create();
+
+        /** @When a Workspace whose nested owner Profile carries a null title is serialized omitting nulls */
+        $array = $mapper->toArray(
+            source: new Workspace(
+                label: 'main',
+                owner: new Profile(
+                    name: 'Alice',
+                    title: null,
+                    severity: Severity::HIGH,
+                    createdAt: new DateTimeImmutable('2024-01-02T03:04:05+00:00')
+                )
+            ),
+            configuration: Configuration::default()->omittingNulls()
+        );
+
+        /** @Then the null-valued title is omitted from the nested object as well */
+        self::assertSame(
+            [
+                'label' => 'main',
+                'owner' => ['name' => 'Alice', 'severity' => 'HIGH', 'createdAt' => '2024-01-02T03:04:05+00:00']
+            ],
+            $array
+        );
     }
 
     public function testToArrayWhenSubtypeRegisteredThenDiscriminatorIsWrittenOnce(): void
@@ -317,6 +415,29 @@ final class SerializationTest extends TestCase
 
         /** @Then the Mappable is serialized through the engine into its portable shape */
         self::assertSame(['city' => 'São Paulo', 'street' => 'Av. Paulista'], $array);
+    }
+
+    public function testToArrayWhenOmittingNullsUnderSnakeCaseThenNullPropertiesAreOmitted(): void
+    {
+        /** @Given a mapper with snake_case naming */
+        $mapper = Mapper::create()->withNaming(namingStrategy: SnakeCase::create());
+
+        /** @When a Profile with a null title is serialized omitting nulls */
+        $array = $mapper->toArray(
+            source: new Profile(
+                name: 'Gustavo',
+                title: null,
+                severity: Severity::HIGH,
+                createdAt: new DateTimeImmutable('2024-01-02T03:04:05+00:00')
+            ),
+            configuration: Configuration::default()->omittingNulls()
+        );
+
+        /** @Then the null-valued title is omitted while the remaining keys keep their snake_case form */
+        self::assertSame(
+            ['name' => 'Gustavo', 'severity' => 'HIGH', 'created_at' => '2024-01-02T03:04:05+00:00'],
+            $array
+        );
     }
 
     public function testToArrayWhenSubtypeByDefaultNamingThenDiscriminatorIsDerivedAsSnakeCase(): void
