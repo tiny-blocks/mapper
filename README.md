@@ -14,6 +14,7 @@
     + [Scalar codecs with Codec](#scalar-codecs-with-codec)
     + [Self-describing scalars with ScalarCodec](#self-describing-scalars-with-scalarcodec)
     + [Transparent delegation for single-property wrappers](#transparent-delegation-for-single-property-wrappers)
+    + [Preserving object shape with Structured](#preserving-object-shape-with-structured)
     + [Factory construction with FactoryMethod](#factory-construction-with-factorymethod)
     + [Configuration and naming](#configuration-and-naming)
     + [Exceptions](#exceptions)
@@ -723,6 +724,62 @@ take over the scalar form, make the wrapper itself carry the rule: register a ma
 annotate the wrapper with `#[ScalarCodec]`. The order of precedence is a registered mapping first, then a
 `#[ScalarCodec]` on the wrapper, then delegation, then plain reflection. A wrapper that owns a `Codec` or a
 `#[ScalarCodec]` always wins over the delegation to its inner type.
+
+### Preserving object shape with Structured
+
+`Structured::create()` builds a mapping that keeps a single-property type as an object instead of letting it
+collapse to the scalar it wraps. It is the counterpart to the delegation above: an unmapped single-property
+wrapper unwraps to its inner scalar, while a wrapper registered with `Structured` emits the property as an
+object on write and rebuilds it by reflection on read, so the shape survives the round trip. It is the
+`Subtype` mapping without the discriminator field, and it honors the active naming strategy and `omittingNulls`.
+
+An organization identified by a single registration id.
+
+```php
+<?php
+
+declare(strict_types=1);
+
+final readonly class Organization
+{
+    public function __construct(public string $registrationId)
+    {
+    }
+}
+```
+
+Without a mapping the wrapper collapses to its scalar; registered with `Structured` it keeps its object shape,
+follows the naming strategy, and rebuilds on read.
+
+```php
+<?php
+
+declare(strict_types=1);
+
+use TinyBlocks\Mapper\Mapper;
+use TinyBlocks\Mapper\SnakeCase;
+use TinyBlocks\Mapper\Structured;
+
+# Default delegation collapses the wrapper to its inner scalar.
+Mapper::create()->toArray(source: new Organization(registrationId: 'org-1'));
+# ['org-1']
+
+# Registered with Structured, the wrapper keeps its object shape and rebuilds on read.
+$mapper = Mapper::create()->withMapping(type: Organization::class, mapping: Structured::create());
+
+$mapper->toArray(source: new Organization(registrationId: 'org-1'));
+# ['registrationId' => 'org-1']
+
+$mapper->toObject(type: Organization::class, source: ['registrationId' => 'org-1']);
+# Organization(registrationId: 'org-1')
+
+# It composes with the naming strategy and with omittingNulls.
+Mapper::create()
+    ->withNaming(namingStrategy: SnakeCase::create())
+    ->withMapping(type: Organization::class, mapping: Structured::create())
+    ->toArray(source: new Organization(registrationId: 'org-1'));
+# ['registration_id' => 'org-1']
+```
 
 ### Factory construction with FactoryMethod
 

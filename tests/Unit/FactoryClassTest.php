@@ -11,6 +11,7 @@ use ReflectionMethod;
 use TinyBlocks\Mapper\Codec;
 use TinyBlocks\Mapper\FactoryMethod;
 use TinyBlocks\Mapper\Layout;
+use TinyBlocks\Mapper\Structured;
 use TinyBlocks\Mapper\Subtype;
 
 final class FactoryClassTest extends TestCase
@@ -34,6 +35,7 @@ final class FactoryClassTest extends TestCase
             'Codec'         => [Codec::class],
             'Layout'        => [Layout::class],
             'Subtype'       => [Subtype::class],
+            'Structured'    => [Structured::class],
             'FactoryMethod' => [FactoryMethod::class]
         ];
     }
