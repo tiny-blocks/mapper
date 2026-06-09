@@ -95,11 +95,14 @@ final readonly class ValueWriter
                 continue;
             }
 
+            $propertyValue = $property->getValue($subject);
+
+            if (is_null($propertyValue) && $configuration->omitsNulls()) {
+                continue;
+            }
+
             $key = $this->naming->toSourceKey(propertyName: $name);
-            $serialized[$key] = $this->write(
-                value: $property->getValue($subject),
-                configuration: $configuration
-            );
+            $serialized[$key] = $this->write(value: $propertyValue, configuration: $configuration);
         }
 
         return $serialized;

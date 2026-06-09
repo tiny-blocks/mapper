@@ -14,6 +14,7 @@
     + [Scalar codecs with Codec](#scalar-codecs-with-codec)
     + [Self-describing scalars with ScalarCodec](#self-describing-scalars-with-scalarcodec)
     + [Transparent delegation for single-property wrappers](#transparent-delegation-for-single-property-wrappers)
+    + [Preserving object shape with Structured](#preserving-object-shape-with-structured)
     + [Factory construction with FactoryMethod](#factory-construction-with-factorymethod)
     + [Configuration and naming](#configuration-and-naming)
     + [Exceptions](#exceptions)
@@ -312,11 +313,14 @@ $mapper = Mapper::create()
     ->withNaming(namingStrategy: SnakeCase::create())
     ->withMapping(type: Studio::class, mapping: Layout::from(paths: []));
 
-$studio = $mapper->toObject(type: Studio::class, source: [
-    'main_camera_serial_number' => 'sn-1',
-    'main_camera_shot_count'    => 7,
-    'tag'                       => 'studio-a'
-]);
+$studio = $mapper->toObject(
+    type: Studio::class,
+    source: [
+        'main_camera_serial_number' => 'sn-1',
+        'main_camera_shot_count'    => 7,
+        'tag'                       => 'studio-a'
+    ]
+);
 ```
 
 The empty `paths` array means every column is derived from the property prefix. A non-empty array overrides
@@ -379,10 +383,7 @@ $mapper = Mapper::create()->withMapping(
     mapping: Layout::from(paths: ['memberId' => new JsonColumn(column: 'member')])
 );
 
-$owner = $mapper->toObject(
-    type: Owner::class,
-    source: ['member' => '{"value":"m-1"}', 'name' => 'Alice']
-);
+$owner = $mapper->toObject(type: Owner::class, source: ['member' => '{"value":"m-1"}', 'name' => 'Alice']);
 ```
 
 ### Collections that map themselves
@@ -464,10 +465,13 @@ use TinyBlocks\Mapper\Mapper;
 
 $mapper = Mapper::create();
 
-$refunds = $mapper->toObject(type: Refunds::class, source: [
-    ['reference' => 'r-1', 'amount' => ['amount' => 100, 'currency' => 'BRL']],
-    ['reference' => 'r-2', 'amount' => ['amount' => 200, 'currency' => 'BRL']]
-]);
+$refunds = $mapper->toObject(
+    type: Refunds::class,
+    source: [
+        ['reference' => 'r-1', 'amount' => ['amount' => 100, 'currency' => 'BRL']],
+        ['reference' => 'r-2', 'amount' => ['amount' => 200, 'currency' => 'BRL']]
+    ]
+);
 ```
 
 The `tiny-blocks/collection` library ships this behavior built in. Its `Collection` base class already
@@ -721,6 +725,62 @@ annotate the wrapper with `#[ScalarCodec]`. The order of precedence is a registe
 `#[ScalarCodec]` on the wrapper, then delegation, then plain reflection. A wrapper that owns a `Codec` or a
 `#[ScalarCodec]` always wins over the delegation to its inner type.
 
+### Preserving object shape with Structured
+
+`Structured::create()` builds a mapping that keeps a single-property type as an object instead of letting it
+collapse to the scalar it wraps. It is the counterpart to the delegation above: an unmapped single-property
+wrapper unwraps to its inner scalar, while a wrapper registered with `Structured` emits the property as an
+object on write and rebuilds it by reflection on read, so the shape survives the round trip. It is the
+`Subtype` mapping without the discriminator field, and it honors the active naming strategy and `omittingNulls`.
+
+An organization identified by a single registration id.
+
+```php
+<?php
+
+declare(strict_types=1);
+
+final readonly class Organization
+{
+    public function __construct(public string $registrationId)
+    {
+    }
+}
+```
+
+Without a mapping the wrapper collapses to its scalar; registered with `Structured` it keeps its object shape,
+follows the naming strategy, and rebuilds on read.
+
+```php
+<?php
+
+declare(strict_types=1);
+
+use TinyBlocks\Mapper\Mapper;
+use TinyBlocks\Mapper\SnakeCase;
+use TinyBlocks\Mapper\Structured;
+
+# Default delegation collapses the wrapper to its inner scalar.
+Mapper::create()->toArray(source: new Organization(registrationId: 'org-1'));
+# ['org-1']
+
+# Registered with Structured, the wrapper keeps its object shape and rebuilds on read.
+$mapper = Mapper::create()->withMapping(type: Organization::class, mapping: Structured::create());
+
+$mapper->toArray(source: new Organization(registrationId: 'org-1'));
+# ['registrationId' => 'org-1']
+
+$mapper->toObject(type: Organization::class, source: ['registrationId' => 'org-1']);
+# Organization(registrationId: 'org-1')
+
+# It composes with the naming strategy and with omittingNulls.
+Mapper::create()
+    ->withNaming(namingStrategy: SnakeCase::create())
+    ->withMapping(type: Organization::class, mapping: Structured::create())
+    ->toArray(source: new Organization(registrationId: 'org-1'));
+# ['registration_id' => 'org-1']
+```
+
 ### Factory construction with FactoryMethod
 
 `FactoryMethod::using` builds a mapping that constructs the target through one of its own public static factory methods,
@@ -786,9 +846,10 @@ the registry, just as a top-level factory mapping does.
 
 ### Configuration and naming
 
-`Configuration` carries per-call output options. The default preserves keys and omits no fields. `omitting`
-excludes properties from the output. `discardingKeys` reindexes iterable content with numeric keys, switching
-the underlying `KeyPreservation` from `PRESERVE` to `DISCARD`.
+`Configuration` carries per-call output options. The default preserves keys, omits no fields, and keeps
+null-valued properties. `omitting` excludes properties from the output. `omittingNulls` drops every object
+property whose value is null, recursing into nested objects. `discardingKeys` reindexes iterable content with
+numeric keys, switching the underlying `KeyPreservation` from `PRESERVE` to `DISCARD`.
 
 A profile with a name, an optional title, a creation timestamp, and a severity.
 
@@ -838,22 +899,33 @@ use TinyBlocks\Mapper\Mapper;
 
 $mapper = Mapper::create();
 
-$profile = $mapper->toObject(type: Profile::class, source: [
-    'name'      => 'Alice',
-    'title'     => 'Owner',
-    'createdAt' => '2026-01-01T00:00:00+00:00',
-    'severity'  => 'HIGH'
-]);
-
-$array = $mapper->toArray(
-    source: $profile,
-    configuration: Configuration::default()->omitting('title')
+$profile = $mapper->toObject(
+    type: Profile::class,
+    source: [
+        'name'      => 'Alice',
+        'title'     => 'Owner',
+        'createdAt' => '2026-01-01T00:00:00+00:00',
+        'severity'  => 'HIGH'
+    ]
 );
 
-$reindex = $mapper->toArray(
-    source: $refunds,
-    configuration: Configuration::default()->discardingKeys()
+$array = $mapper->toArray(source: $profile, configuration: Configuration::default()->omitting('title'));
+
+$reindex = $mapper->toArray(source: $refunds, configuration: Configuration::default()->discardingKeys());
+
+$draft = $mapper->toObject(
+    type: Profile::class,
+    source: [
+        'name'      => 'Alice',
+        'title'     => null,
+        'createdAt' => '2026-01-01T00:00:00+00:00',
+        'severity'  => 'HIGH'
+    ]
 );
+
+# The explicit null title is dropped, so the output is:
+# ['name' => 'Alice', 'createdAt' => '2026-01-01T00:00:00+00:00', 'severity' => 'HIGH']
+$withoutNulls = $mapper->toArray(source: $draft, configuration: Configuration::default()->omittingNulls());
 ```
 
 `NamingStrategy` is the interface controlling how source keys translate to property names. `Identity` (the
