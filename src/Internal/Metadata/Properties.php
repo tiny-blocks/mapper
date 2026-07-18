@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace TinyBlocks\Mapper\Internal\Metadata;
 
 use ReflectionClass;
+use TinyBlocks\Mapper\Transient;
 
 final class Properties
 {
@@ -24,6 +25,10 @@ final class Properties
         while ($current !== false) {
             foreach ($current->getProperties() as $property) {
                 if ($property->isStatic()) {
+                    continue;
+                }
+
+                if ($property->getAttributes(Transient::class) !== []) {
                     continue;
                 }
 

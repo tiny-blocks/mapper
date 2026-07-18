@@ -16,6 +16,7 @@
     + [Transparent delegation for single-property wrappers](#transparent-delegation-for-single-property-wrappers)
     + [Preserving object shape with Structured](#preserving-object-shape-with-structured)
     + [Factory construction with FactoryMethod](#factory-construction-with-factorymethod)
+    + [Ignoring properties with Transient](#ignoring-properties-with-transient)
     + [Configuration and naming](#configuration-and-naming)
     + [Exceptions](#exceptions)
 * [License](#license)
@@ -23,23 +24,23 @@
 
 ## Overview
 
-Maps PHP objects to and from arrays, JSON, and iterables through reflection and pluggable strategies. Handles
-backed and pure enums, value objects, nested objects, date-time types, and collections out of the box. Designed
-for DTO hydration, serialization at the HTTP boundary, flat-row decoding at the persistence boundary, and data
-transfer between bounded contexts.
+Maps PHP objects to and from arrays, JSON, and iterables through reflection and pluggable strategies. Handles backed and
+pure enums, value objects, nested objects, date-time types, and collections out of the box. Designed for DTO hydration,
+serialization at the HTTP boundary, flat-row decoding at the persistence boundary, and data transfer between bounded
+contexts.
 
-The library exposes two complementary ways to use it. The primary one is the `Mapper` service, an immutable
-builder that keeps the mapped class fully decoupled from the library. No interface to implement, no trait to
-use, nothing on the domain side. It fulfills two narrow service contracts, `Serializer` (object to array and
-JSON) and `Deserializer` (array, JSON, or iterable to object), so a consumer can depend on the capability it
-needs rather than on the concrete service.
+The library exposes two complementary ways to use it. The primary one is the `Mapper` service, an immutable builder that
+keeps the mapped class fully decoupled from the library. No interface to implement, no trait to use, nothing on the
+domain side. It fulfills two narrow service contracts, `Serializer` (object to array and JSON) and `Deserializer`
+(array, JSON, or iterable to object), so a consumer can depend on the capability it needs rather than on the concrete
+service.
 
-The second is the `Mappable` interface plus the `MappableBehavior` trait, an opt-in hook for application DTOs
-that prefer to map themselves. `Mappable` combines `Serializable` (render to array and JSON) and
-`Deserializable` (build from a source). The mapping logic lives in the mapper, not on the type: objects are
-reflected by the engine and collections are built internally, so a `Mappable` type exposes no engine-facing
-method. When a configured `Mapper` maps a `Mappable` value, the engine reflects it through the active naming,
-so nested children resolve through any registered mappings.
+The second is the `Mappable` interface plus the `MappableBehavior` trait, an opt-in hook for application DTOs that
+prefer to map themselves. `Mappable` combines `Serializable` (render to array and JSON) and
+`Deserializable` (build from a source). The mapping logic lives in the mapper, not on the type: objects are reflected by
+the engine and collections are built internally, so a `Mappable` type exposes no engine-facing method. When a configured
+`Mapper` maps a `Mappable` value, the engine reflects it through the active naming, so nested children resolve through
+any registered mappings.
 
 ## Installation
 
@@ -51,8 +52,8 @@ composer require tiny-blocks/mapper
 
 ### The Mapper service
 
-`Mapper::create()` returns an empty mapper with identity naming and lenient unknown keys. The same instance
-hydrates from arrays, JSON strings, and iterables, and serializes back to arrays or JSON.
+`Mapper::create()` returns an empty mapper with identity naming and lenient unknown keys. The same instance hydrates
+from arrays, JSON strings, and iterables, and serializes back to arrays or JSON.
 
 A currency-bearing amount is the value object the mapper hydrates.
 
@@ -83,8 +84,8 @@ enum Currency: string
 }
 ```
 
-With those in place, the mapper reads and writes them through a single service. `toObject` hydrates from
-an array, a JSON string, or any iterable.
+With those in place, the mapper reads and writes them through a single service. `toObject` hydrates from an array, a
+JSON string, or any iterable.
 
 ```php
 <?php
@@ -112,8 +113,8 @@ $array = $mapper->toArray(source: $amount);
 $json = $mapper->toJson(source: $amount);
 ```
 
-`withNaming`, `withMapping`, and `rejectingUnknownKeys` return a new mapper each time. The original instance
-keeps its previous configuration.
+`withNaming`, `withMapping`, and `rejectingUnknownKeys` return a new mapper each time. The original instance keeps its
+previous configuration.
 
 ```php
 <?php
@@ -129,15 +130,15 @@ $strict = Mapper::create()
 ```
 
 The mapper fulfills two service contracts: `Serializer` (`toArray`, `toJson`, and their `*OrNull` variants)
-and `Deserializer` (`toObject`, `toProperties`, `toObjectOrNull`). A consumer can type-hint the narrow
-contract it depends on instead of the concrete `Mapper`.
+and `Deserializer` (`toObject`, `toProperties`, `toObjectOrNull`). A consumer can type-hint the narrow contract it
+depends on instead of the concrete `Mapper`.
 
 ### The Mappable trait
 
 When an application DTO prefers to map itself, implement `Mappable` and use `MappableBehavior`. `Mappable`
 combines `Serializable` (the `toArray` and `toJson` output methods) and `Deserializable` (the `buildFrom`
-factory). The trait implements all three on top of the same engine that backs the `Mapper` service, so the
-type needs no explicit `Mapper` instance at the call site and exposes no engine-facing method.
+factory). The trait implements all three on top of the same engine that backs the `Mapper` service, so the type needs no
+explicit `Mapper` instance at the call site and exposes no engine-facing method.
 
 A two-field address wires itself into the mapper through the trait.
 
@@ -172,17 +173,17 @@ $array = $address->toArray();
 $json = $address->toJson();
 ```
 
-`buildFrom`, `toArray`, and `toJson` map the instance on its own, with identity naming and no registered
-mappings. When a configured `Mapper` serializes or hydrates a `Mappable` subject, the engine reflects it
-through the active naming, so any mapping registered for a nested type applies. A mapping registered for the
+`buildFrom`, `toArray`, and `toJson` map the instance on its own, with identity naming and no registered mappings. When
+a configured `Mapper` serializes or hydrates a `Mappable` subject, the engine reflects it through the active naming, so
+any mapping registered for a nested type applies. A mapping registered for the
 `Mappable` type itself takes precedence over the reflection-based default.
 
 ### Polymorphic types with Subtype
 
 `Subtype::by` builds a mapping that selects a concrete class by the value of a discriminator field. It lists the
-concrete types only and derives each discriminator value from the type's short name. The naming strategy applied
-to the short name produces the value and defaults to snake_case. On read, the field value picks the class. On
-write, the class is reverse-looked-up to its derived value, which is written back exactly once.
+concrete types only and derives each discriminator value from the type's short name. The naming strategy applied to the
+short name produces the value and defaults to snake_case. On read, the field value picks the class. On write, the class
+is reverse-looked-up to its derived value, which is written back exactly once.
 
 The abstract parent the discriminator resolves to.
 
@@ -232,8 +233,8 @@ final readonly class DebitCard extends PaymentMethod
 ```
 
 The mapping wires both concrete types under a shared discriminator field. The `field` names the discriminator,
-`types` are the concrete classes whose short names derive the values, `naming` is the optional convention
-(snake_case by default), and `default` is the optional factory used when no case matches.
+`types` are the concrete classes whose short names derive the values, `naming` is the optional convention (snake_case by
+default), and `default` is the optional factory used when no case matches.
 
 ```php
 <?php
@@ -255,18 +256,18 @@ $mapper = Mapper::create()->withMapping(
 $method = $mapper->toObject(type: PaymentMethod::class, source: ['type' => 'pix', 'payerId' => 'Alice']);
 ```
 
-With the snake_case default, `DebitCard` derives `debit_card` and `Pix` derives `pix`, so the listed types alone
-define the discriminator values. The optional `default` factory is invoked when no case matches and when the
-discriminator field is absent. With no default, an unmatched case raises `UnknownSubtype`. A misconfigured
-mapping raises `InvalidSubtypeCase`: when two types derive the same value, or when a registered case is not a
-subtype of the mapped type.
+With the snake_case default, `DebitCard` derives `debit_card` and `Pix` derives `pix`, so the listed types alone define
+the discriminator values. The optional `default` factory is invoked when no case matches and when the discriminator
+field is absent. With no default, an unmatched case raises `UnknownSubtype`. A misconfigured mapping raises
+`InvalidSubtypeCase`: when two types derive the same value, or when a registered case is not a subtype of the mapped
+type.
 
 ### Flat rows with Layout
 
-`Layout::from` builds a mapping for a flat relational row whose columns map onto a nested object graph. Columns
-that follow the prefix-derivation convention (`{field}{separator}{subfield}` under the active naming strategy)
-are derived and need no entry. Only renamed leaves, columns outside their expected prefix, and JSON-encoded
-columns are declared.
+`Layout::from` builds a mapping for a flat relational row whose columns map onto a nested object graph. Columns that
+follow the prefix-derivation convention (`{field}{separator}{subfield}` under the active naming strategy)
+are derived and need no entry. Only renamed leaves, columns outside their expected prefix, and JSON-encoded columns are
+declared.
 
 A camera with a serial number and a shot counter.
 
@@ -323,14 +324,14 @@ $studio = $mapper->toObject(
 );
 ```
 
-The empty `paths` array means every column is derived from the property prefix. A non-empty array overrides
-specific leaves with a different column name.
+The empty `paths` array means every column is derived from the property prefix. A non-empty array overrides specific
+leaves with a different column name.
 
 ### JSON columns with JsonColumn
 
-A `JsonColumn` marks a column as holding a JSON document. On read, the column is decoded and mapped onto the
-graph path. On write, the corresponding subgraph is encoded back into the column. Other declared paths combine
-freely with JSON-marked ones in the same `Layout::from(paths: [...])` call.
+A `JsonColumn` marks a column as holding a JSON document. On read, the column is decoded and mapped onto the graph path.
+On write, the corresponding subgraph is encoded back into the column. Other declared paths combine freely with
+JSON-marked ones in the same `Layout::from(paths: [...])` call.
 
 A member identifier wraps a single scalar with a value accessor.
 
@@ -388,11 +389,11 @@ $owner = $mapper->toObject(type: Owner::class, source: ['member' => '{"value":"m
 
 ### Collections that map themselves
 
-PHP carries no runtime element type for a typed collection, so a collection implements `IterableMappable` and
-declares its element type with the `#[ElementType]` attribute. On read, the mapper maps each source element to
-that type and hands the built elements to `createFrom`. Absence of the attribute means passthrough: elements
-are kept as-is. On write, the collection is iterated and each element is serialized through the engine, so a
-mapping registered for the element type is honored on every element.
+PHP carries no runtime element type for a typed collection, so a collection implements `IterableMappable` and declares
+its element type with the `#[ElementType]` attribute. On read, the mapper maps each source element to that type and
+hands the built elements to `createFrom`. Absence of the attribute means passthrough: elements are kept as-is. On write,
+the collection is iterated and each element is serialized through the engine, so a mapping registered for the element
+type is honored on every element.
 
 A refund row bound to a single amount.
 
@@ -453,8 +454,8 @@ class Refunds implements IteratorAggregate, IterableMappable
 }
 ```
 
-Mapping a list of refund rows into the collection needs no registration. The mapper builds each element from
-the declared `#[ElementType]` and hands the result to `createFrom`.
+Mapping a list of refund rows into the collection needs no registration. The mapper builds each element from the
+declared `#[ElementType]` and hands the result to `createFrom`.
 
 ```php
 <?php
@@ -474,8 +475,8 @@ $refunds = $mapper->toObject(
 );
 ```
 
-The `tiny-blocks/collection` library ships this behavior built in. Its `Collection` base class already
-implements `IterableMappable`, so a typed collection only declares its element with the `#[ElementType]`
+The `tiny-blocks/collection` library ships this behavior built in. Its `Collection` base class already implements
+`IterableMappable`, so a typed collection only declares its element with the `#[ElementType]`
 attribute.
 
 ### Scalar codecs with Codec
@@ -553,17 +554,17 @@ $checkIn = $mapper->toObject(type: CalendarDate::class, source: '2026-05-23');
 ```
 
 The encode closure is consulted for every write of the type, nested or top-level. The decode closure is consulted
-whenever the type is resolved, top-level or as a nested scalar property: a registered mapping takes precedence over
-the built-in single-property unwrap. Only unregistered single-value wrappers fall back to that unwrap.
+whenever the type is resolved, top-level or as a nested scalar property: a registered mapping takes precedence over the
+built-in single-property unwrap. Only unregistered single-value wrappers fall back to that unwrap.
 
 ### Self-describing scalars with ScalarCodec
 
-`#[ScalarCodec]` is the self-describing twin of `Codec`: rather than registering closures, a value object names
-the methods that convert it to and from a scalar, and the mapper calls them with no configuration. Each attribute
-is one decode and encode pair, and the attribute is repeatable. On read, the pair whose decode parameter type
-accepts the source scalar is selected, so a type can be built from more than one scalar form. On write, the first
-declared pair's encode is used. The attribute adds no public methods: it names methods the type already has. A
-mapping registered through `withMapping` for the same type takes precedence over the attribute.
+`#[ScalarCodec]` is the self-describing twin of `Codec`: rather than registering closures, a value object names the
+methods that convert it to and from a scalar, and the mapper calls them with no configuration. Each attribute is one
+decode and encode pair, and the attribute is repeatable. On read, the pair whose decode parameter type accepts the
+source scalar is selected, so a type can be built from more than one scalar form. On write, the first declared pair's
+encode is used. The attribute adds no public methods: it names methods the type already has. A mapping registered
+through `withMapping` for the same type takes precedence over the attribute.
 
 A version that builds from a label string or a release number, and renders back to its label.
 
@@ -636,21 +637,20 @@ $label = $mapper->toArray(source: Version::fromLabel(label: 'v7'));
 ```
 
 A mapping is specified in one of two ways. Registered mappings are attached through `withMapping`: `Codec`,
-`FactoryMethod`, `Layout`, and `Subtype` each build a `Mapping` the mapper consults first. Self-describing types
-carry the rule themselves: the `Mappable` and `IterableMappable` interfaces, and the `#[ElementType]` and
+`FactoryMethod`, `Layout`, and `Subtype` each build a `Mapping` the mapper consults first. Self-describing types carry
+the rule themselves: the `Mappable` and `IterableMappable` interfaces, and the `#[ElementType]` and
 `#[ScalarCodec]` attributes. A registered mapping always wins over a self-describing one for the same type.
 
 ### Transparent delegation for single-property wrappers
 
-A type with a single property needs no mapping of its own to share the scalar form of the value it wraps. When
-that single property reduces to a scalar, the mapper unwraps the type on write and rebuilds it on read,
-delegating to the inner type's own mapping. The wrapper declares nothing, and the delegation recurses through
-nested wrappers until it reaches the scalar.
+A type with a single property needs no mapping of its own to share the scalar form of the value it wraps. When that
+single property reduces to a scalar, the mapper unwraps the type on write and rebuilds it on read, delegating to the
+inner type's own mapping. The wrapper declares nothing, and the delegation recurses through nested wrappers until it
+reaches the scalar.
 
-A property reduces to a scalar when its type is a native scalar, a backed enum, a `DateTimeInterface`, a type
-annotated with `#[ScalarCodec]`, or, recursively, another single-property type whose own property reduces to a
-scalar. A pure enum reduces to its case name. A `Traversable` never reduces, and neither does an object
-with two nor more properties.
+A property reduces to a scalar when its type is a native scalar, a backed enum, a `DateTimeInterface`, a type annotated
+with `#[ScalarCodec]`, or, recursively, another single-property type whose own property reduces to a scalar. A pure enum
+reduces to its case name. A `Traversable` never reduces, and neither does an object with two nor more properties.
 
 A priority label that wraps a backed enum and declares no mapping.
 
@@ -719,18 +719,18 @@ The serialized form of the single property follows the inner type.
 | A `Traversable` collection.                      | A nested array under the property key.  |
 | An object with two or more properties.           | A nested object under the property key. |
 
-Delegation is the fallback for a single-property type that neither registers a mapping nor self-describes. To
-take over the scalar form, make the wrapper itself carry the rule: register a mapping through `withMapping`, or
-annotate the wrapper with `#[ScalarCodec]`. The order of precedence is a registered mapping first, then a
+Delegation is the fallback for a single-property type that neither registers a mapping nor self-describes. To take over
+the scalar form, make the wrapper itself carry the rule: register a mapping through `withMapping`, or annotate the
+wrapper with `#[ScalarCodec]`. The order of precedence is a registered mapping first, then a
 `#[ScalarCodec]` on the wrapper, then delegation, then plain reflection. A wrapper that owns a `Codec` or a
 `#[ScalarCodec]` always wins over the delegation to its inner type.
 
 ### Preserving object shape with Structured
 
-`Structured::create()` builds a mapping that keeps a single-property type as an object instead of letting it
-collapse to the scalar it wraps. It is the counterpart to the delegation above: an unmapped single-property
-wrapper unwraps to its inner scalar, while a wrapper registered with `Structured` emits the property as an
-object on write and rebuilds it by reflection on read, so the shape survives the round trip. It is the
+`Structured::create()` builds a mapping that keeps a single-property type as an object instead of letting it collapse to
+the scalar it wraps. It is the counterpart to the delegation above: an unmapped single-property wrapper unwraps to its
+inner scalar, while a wrapper registered with `Structured` emits the property as an object on write and rebuilds it by
+reflection on read, so the shape survives the round trip. It is the
 `Subtype` mapping without the discriminator field, and it honors the active naming strategy and `omittingNulls`.
 
 An organization identified by a single registration id.
@@ -748,8 +748,8 @@ final readonly class Organization
 }
 ```
 
-Without a mapping the wrapper collapses to its scalar; registered with `Structured` it keeps its object shape,
-follows the naming strategy, and rebuilds on read.
+Without a mapping the wrapper collapses to its scalar; registered with `Structured` it keeps its object shape, follows
+the naming strategy, and rebuilds on read.
 
 ```php
 <?php
@@ -832,24 +832,83 @@ $row = $mapper->toArray(source: $money);
 ```
 
 The factory parameter names must match the target's property names. Each parameter is resolved by its name under the
-active `NamingStrategy`, with scalar coercion and recursive mapping, honoring any registered mapping for nested types.
-A single-parameter factory is fed the scalar source directly. A multi-parameter factory is fed an array, so a
-top-level multi-parameter source must be an array, not a JSON string.
+active `NamingStrategy`, with scalar coercion and recursive mapping, honoring any registered mapping for nested types. A
+single-parameter factory is fed the scalar source directly. A multi-parameter factory is fed an array, so a top-level
+multi-parameter source must be an array, not a JSON string.
 
-Writing is reflection over the instance's declared properties, not the inverse of the factory. A single-property
-object writes back to a scalar and a compound one to an array, so the round-trip is lossless only when the persisted
-form is the canonical form the factory consumes.
+Writing is reflection over the instance's declared properties, not the inverse of the factory. A single-property object
+writes back to a scalar and a compound one to an array, so the round-trip is lossless only when the persisted form is
+the canonical form the factory consumes.
 
 `Layout::from(paths: [...], factory: 'of')` composes the two: the flat row is reshaped onto the nested graph and the
-final object is built through the factory instead of reflection injection. The nested values inside resolve through
-the registry, just as a top-level factory mapping does.
+final object is built through the factory instead of reflection injection. The nested values inside resolve through the
+registry, just as a top-level factory mapping does.
+
+### Ignoring properties with Transient
+
+`#[Transient]` marks a property the mapper skips in both directions. A transient property never appears in the
+serialized output and is never hydrated from a source document, so infrastructure state carried on the object (an event
+buffer, a version counter, a cached computation) stays out of the portable form while remaining an ordinary property of
+the class. Unlike `Configuration::omitting`, which drops a field for a single call, the attribute is a permanent trait
+of the type, honored by every mapper with no configuration.
+
+An account that exposes its number and balance, and keeps a checksum it derives on its own.
+
+```php
+<?php
+
+declare(strict_types=1);
+
+use TinyBlocks\Mapper\Transient;
+
+final readonly class Account
+{
+    #[Transient]
+    private string $checksum;
+
+    public function __construct(public string $number, public int $balance)
+    {
+        $this->checksum = sprintf('%s:%d', $number, $balance);
+    }
+
+    public function checksum(): string
+    {
+        return $this->checksum;
+    }
+}
+```
+
+The mapper serializes the state and leaves the transient property out, and on read the type derives it again instead of
+taking it from the source.
+
+```php
+<?php
+
+declare(strict_types=1);
+
+use TinyBlocks\Mapper\Mapper;
+
+$mapper = Mapper::create();
+
+# The transient checksum is absent from the serialized state.
+$row = $mapper->toArray(source: new Account(number: 'ac-1', balance: 500));
+# ['number' => 'ac-1', 'balance' => 500]
+
+# On read the checksum is not taken from the source, the constructor recomputes it.
+$account = $mapper->toObject(type: Account::class, source: ['number' => 'ac-1', 'balance' => 500]);
+# $account->checksum() === 'ac-1:500'
+```
+
+The attribute targets any property, including one declared on a trait. Because a transient property is dropped from the
+type descriptor, the type must construct itself without it: it belongs on infrastructure state the object derives or
+assigns on its own, not on a value the source is expected to provide.
 
 ### Configuration and naming
 
-`Configuration` carries per-call output options. The default preserves keys, omits no fields, and keeps
-null-valued properties. `omitting` excludes properties from the output. `omittingNulls` drops every object
-property whose value is null, recursing into nested objects. `discardingKeys` reindexes iterable content with
-numeric keys, switching the underlying `KeyPreservation` from `PRESERVE` to `DISCARD`.
+`Configuration` carries per-call output options. The default preserves keys, omits no fields, and keeps null-valued
+properties. `omitting` excludes properties from the output. `omittingNulls` drops every object property whose value is
+null, recursing into nested objects. `discardingKeys` reindexes iterable content with numeric keys, switching the
+underlying `KeyPreservation` from `PRESERVE` to `DISCARD`.
 
 A profile with a name, an optional title, a creation timestamp, and a severity.
 
@@ -886,8 +945,8 @@ enum Severity
 }
 ```
 
-The profile is hydrated through the mapper from a source array, so `omitting` operates on a visible typed
-property. The `$refunds` collection from the previous section is reindex with numeric keys.
+The profile is hydrated through the mapper from a source array, so `omitting` operates on a visible typed property. The
+`$refunds` collection from the previous section is reindex with numeric keys.
 
 ```php
 <?php
@@ -928,10 +987,10 @@ $draft = $mapper->toObject(
 $withoutNulls = $mapper->toArray(source: $draft, configuration: Configuration::default()->omittingNulls());
 ```
 
-`NamingStrategy` is the interface controlling how source keys translate to property names. `Identity` (the
-default) expects keys that already match property names. `SnakeCase` translates between snake_case source keys
-and camelCase properties, and it also drives the prefix-derivation column names used by `Layout`. A custom
-convention implements `NamingStrategy` directly, defining `toSourceKey` (a property name to its source key) and
+`NamingStrategy` is the interface controlling how source keys translate to property names. `Identity` (the default)
+expects keys that already match property names. `SnakeCase` translates between snake_case source keys and camelCase
+properties, and it also drives the prefix-derivation column names used by `Layout`. A custom convention implements
+`NamingStrategy` directly, defining `toSourceKey` (a property name to its source key) and
 `derivedColumn` (the ordered property-path segments to a flat column name).
 
 ```php
