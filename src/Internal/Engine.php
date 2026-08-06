@@ -131,7 +131,7 @@ final class Engine
         return $this->valueWriter->reflectionWrite(
             subject: $subject,
             descriptor: Descriptors::of(type: $subject::class),
-            configuration: $configuration ?? Configuration::default()
+            configuration: ($configuration ?? Configuration::default())
         );
     }
 }

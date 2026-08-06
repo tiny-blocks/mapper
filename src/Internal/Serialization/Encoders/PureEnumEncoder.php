@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace TinyBlocks\Mapper\Internal\Serialization\Encoders;
 
-use UnitEnum;
 use TinyBlocks\Mapper\Internal\Metadata\ClassDescriptor;
 use TinyBlocks\Mapper\Internal\Metadata\Kind;
+use UnitEnum;
 
 final readonly class PureEnumEncoder implements Encoder
 {

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace TinyBlocks\Mapper\Internal\Deserialization\Resolvers;
 
-use UnitEnum;
 use TinyBlocks\Mapper\Exceptions\UnmappableSource;
 use TinyBlocks\Mapper\Internal\Metadata\ClassDescriptor;
 use TinyBlocks\Mapper\Internal\Metadata\Kind;
+use UnitEnum;
 
 final readonly class PureEnumResolver implements Resolver
 {

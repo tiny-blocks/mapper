@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace TinyBlocks\Mapper\Internal\Mappings\Layout;
 
 use ReflectionProperty;
-use WeakMap;
 use TinyBlocks\Mapper\Internal\Context;
 use TinyBlocks\Mapper\Internal\Deserialization\ValueReader;
 use TinyBlocks\Mapper\Internal\Metadata\Descriptors;
 use TinyBlocks\Mapper\Internal\Metadata\ShapeAnalyzer;
 use TinyBlocks\Mapper\JsonColumn;
 use TinyBlocks\Mapper\NamingStrategy;
+use WeakMap;
 
 final class LayoutCodec
 {
@@ -76,7 +76,7 @@ final class LayoutCodec
 
     private function treeFor(string $type, NamingStrategy $naming): NestedNode
     {
-        $cached = $this->trees[$naming] ?? [];
+        $cached = ($this->trees[$naming] ?? []);
 
         if (!array_key_exists($type, $cached)) {
             $cached[$type] = $this->build(type: $type, naming: $naming, prefix: []);

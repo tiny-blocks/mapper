@@ -5,12 +5,37 @@ declare(strict_types=1);
 namespace TinyBlocks\Mapper\Internal\Metadata;
 
 use ReflectionClass;
+use ReflectionProperty;
 use TinyBlocks\Mapper\Transient;
 
 final class Properties
 {
     private function __construct()
     {
+    }
+
+    private static function mergeFrom(array $collected, ReflectionClass $reflection): array
+    {
+        foreach ($reflection->getProperties() as $property) {
+            $name = $property->getName();
+
+            if (!Properties::isEligible(property: $property)) {
+                continue;
+            }
+
+            if (array_key_exists($name, $collected)) {
+                continue;
+            }
+
+            $collected[$name] = $property;
+        }
+
+        return $collected;
+    }
+
+    private static function isEligible(ReflectionProperty $property): bool
+    {
+        return !$property->isStatic() && $property->getAttributes(Transient::class) === [];
     }
 
     public static function collectDeclared(?ReflectionClass $reflection): array
@@ -23,22 +48,7 @@ final class Properties
         $current = $reflection;
 
         while ($current !== false) {
-            foreach ($current->getProperties() as $property) {
-                if ($property->isStatic()) {
-                    continue;
-                }
-
-                if ($property->getAttributes(Transient::class) !== []) {
-                    continue;
-                }
-
-                if (array_key_exists($property->getName(), $collected)) {
-                    continue;
-                }
-
-                $collected[$property->getName()] = $property;
-            }
-
+            $collected = Properties::mergeFrom(collected: $collected, reflection: $current);
             $current = $current->getParentClass();
         }
 
