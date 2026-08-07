@@ -8,7 +8,7 @@ use TinyBlocks\Mapper\Exceptions\UnmappableSource;
 
 final class Json
 {
-    private const int ENCODE_FLAGS = JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION;
+    private const int ENCODE_FLAGS = (JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION);
 
     private function __construct()
     {

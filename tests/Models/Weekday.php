@@ -14,7 +14,7 @@ final readonly class Weekday
     {
         $cases = ['mon' => 'monday', 'monday' => 'monday', 'tue' => 'tuesday', 'tuesday' => 'tuesday'];
 
-        return new Weekday(name: $cases[$name] ?? $name);
+        return new Weekday(name: ($cases[$name] ?? $name));
     }
 
     public function name(): string

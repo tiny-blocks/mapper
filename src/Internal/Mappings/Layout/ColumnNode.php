@@ -14,7 +14,7 @@ final readonly class ColumnNode implements LayoutNode
 
     public function read(array $row): mixed
     {
-        return $row[$this->column] ?? null;
+        return ($row[$this->column] ?? null);
     }
 
     public function write(mixed $value, Context $context): array

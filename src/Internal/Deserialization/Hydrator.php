@@ -34,8 +34,15 @@ final readonly class Hydrator
             $property->setValue($instance, $resolved);
         }
 
+        $this->guardUnknown(source: $source, descriptor: $descriptor, expectedKeys: $expectedKeys);
+
+        return $instance;
+    }
+
+    private function guardUnknown(array $source, ClassDescriptor $descriptor, array $expectedKeys): void
+    {
         if (!$this->rejectUnknownKeys) {
-            return $instance;
+            return;
         }
 
         foreach (array_keys($source) as $key) {
@@ -47,7 +54,5 @@ final readonly class Hydrator
 
             throw new UnexpectedKey(message: sprintf($template, (string)$key, $descriptor->type));
         }
-
-        return $instance;
     }
 }

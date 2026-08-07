@@ -57,6 +57,11 @@ final readonly class ValueWriter
             : $this->serializeObject(subject: $subject, descriptor: $descriptor, configuration: $configuration);
     }
 
+    private function skipsNull(mixed $value, Configuration $configuration): bool
+    {
+        return is_null($value) && $configuration->omitsNulls();
+    }
+
     private function writeObject(object $value, Configuration $configuration): mixed
     {
         $registered = $this->registry->find(type: $value::class);
@@ -97,7 +102,7 @@ final readonly class ValueWriter
 
             $propertyValue = $property->getValue($subject);
 
-            if (is_null($propertyValue) && $configuration->omitsNulls()) {
+            if ($this->skipsNull(value: $propertyValue, configuration: $configuration)) {
                 continue;
             }
 

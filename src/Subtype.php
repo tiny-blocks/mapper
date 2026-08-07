@@ -38,7 +38,7 @@ final class Subtype
         ?NamingStrategy $naming = null,
         ?Closure $default = null
     ): Mapping {
-        $strategy = $naming ?? SnakeCase::create();
+        $strategy = ($naming ?? SnakeCase::create());
         $cases = [];
 
         foreach ($types as $type) {

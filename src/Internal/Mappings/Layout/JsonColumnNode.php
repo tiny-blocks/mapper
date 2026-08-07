@@ -15,7 +15,7 @@ final readonly class JsonColumnNode implements LayoutNode
 
     public function read(array $row): mixed
     {
-        $raw = $row[$this->column] ?? null;
+        $raw = ($row[$this->column] ?? null);
 
         return is_string($raw) ? Json::decode(payload: $raw) : $raw;
     }

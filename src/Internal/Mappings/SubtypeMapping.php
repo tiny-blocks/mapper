@@ -22,7 +22,7 @@ final readonly class SubtypeMapping implements Mapping
     {
         $engineContext = Context::cast(context: $context);
         $normalized = Source::normalize(source: $source);
-        $value = $normalized[$this->field] ?? null;
+        $value = ($normalized[$this->field] ?? null);
         $concrete = is_string($value) ? ($this->cases[$value] ?? null) : null;
 
         if (is_null($concrete)) {

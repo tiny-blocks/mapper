@@ -47,7 +47,7 @@ final readonly class Mapper implements Serializer, Deserializer
 
     public function toArray(object $source, ?Configuration $configuration = null): array
     {
-        $written = $this->engine->write(value: $source, configuration: $configuration ?? Configuration::default());
+        $written = $this->engine->write(value: $source, configuration: ($configuration ?? Configuration::default()));
 
         return is_array($written) ? $written : [$written];
     }
