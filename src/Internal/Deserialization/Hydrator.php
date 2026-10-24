@@ -30,7 +30,7 @@ final readonly class Hydrator
                 continue;
             }
 
-            $resolved = $this->valueReader->resolve(value: $source[$key], type: $property->getType());
+            $resolved = $this->valueReader->resolve(type: $property->getType(), value: $source[$key]);
             $property->setValue($instance, $resolved);
         }
 

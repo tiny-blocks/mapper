@@ -10,6 +10,11 @@ use TinyBlocks\Mapper\Internal\Source;
 
 trait MappableBehavior
 {
+    public static function buildFrom(string|iterable $source): static
+    {
+        return Engine::identity()->reflectionRead(type: static::class, source: Source::normalize(source: $source));
+    }
+
     public function toJson(?Configuration $configuration = null): string
     {
         return Json::encode(value: $this->toArray(configuration: $configuration));
@@ -18,10 +23,5 @@ trait MappableBehavior
     public function toArray(?Configuration $configuration = null): array
     {
         return Engine::identity()->reflectionWrite(subject: $this, configuration: $configuration);
-    }
-
-    public static function buildFrom(string|iterable $source): static
-    {
-        return Engine::identity()->reflectionRead(type: static::class, source: Source::normalize(source: $source));
     }
 }

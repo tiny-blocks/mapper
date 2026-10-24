@@ -46,8 +46,8 @@ final readonly class FactoryInvoker
             }
 
             $arguments[$parameter->getName()] = $this->valueReader->resolve(
-                value: $source[$key],
-                type: $parameter->getType()
+                type: $parameter->getType(),
+                value: $source[$key]
             );
         }
 
@@ -56,6 +56,6 @@ final readonly class FactoryInvoker
 
     private function fromScalar(mixed $source, ReflectionParameter $parameter): array
     {
-        return [$parameter->getName() => $this->valueReader->resolve(value: $source, type: $parameter->getType())];
+        return [$parameter->getName() => $this->valueReader->resolve(type: $parameter->getType(), value: $source)];
     }
 }

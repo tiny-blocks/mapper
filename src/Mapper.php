@@ -52,29 +52,9 @@ final readonly class Mapper implements Serializer, Deserializer
         return is_array($written) ? $written : [$written];
     }
 
-    public function toJsonOrNull(?object $source, ?Configuration $configuration = null): ?string
-    {
-        return is_null($source) ? null : $this->toJson(source: $source, configuration: $configuration);
-    }
-
-    public function toArrayOrNull(?object $source, ?Configuration $configuration = null): ?array
-    {
-        return is_null($source) ? null : $this->toArray(source: $source, configuration: $configuration);
-    }
-
     public function toObject(string $type, string|iterable $source): object
     {
         return $this->engine->read(type: $type, source: $source);
-    }
-
-    public function toProperties(string $type, array $paths, string|iterable $source): array
-    {
-        return $this->engine->arguments(type: $type, paths: $paths, source: $source);
-    }
-
-    public function toObjectOrNull(string $type, string|iterable|null $source): ?object
-    {
-        return is_null($source) ? null : $this->toObject(type: $type, source: $source);
     }
 
     /**
@@ -107,6 +87,26 @@ final readonly class Mapper implements Serializer, Deserializer
             namingStrategy: $this->namingStrategy,
             rejectUnknownKeys: $this->rejectUnknownKeys
         );
+    }
+
+    public function toJsonOrNull(?object $source, ?Configuration $configuration = null): ?string
+    {
+        return is_null($source) ? null : $this->toJson(source: $source, configuration: $configuration);
+    }
+
+    public function toProperties(string $type, array $paths, string|iterable $source): array
+    {
+        return $this->engine->arguments(type: $type, paths: $paths, source: $source);
+    }
+
+    public function toArrayOrNull(?object $source, ?Configuration $configuration = null): ?array
+    {
+        return is_null($source) ? null : $this->toArray(source: $source, configuration: $configuration);
+    }
+
+    public function toObjectOrNull(string $type, string|iterable|null $source): ?object
+    {
+        return is_null($source) ? null : $this->toObject(type: $type, source: $source);
     }
 
     /**

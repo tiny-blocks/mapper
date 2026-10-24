@@ -53,8 +53,8 @@ final readonly class NestedNode implements LayoutNode
             }
 
             $arguments[$child->property->getName()] = $valueReader->resolve(
-                value: $child->node->read(row: $row),
-                type: $child->property->getType()
+                type: $child->property->getType(),
+                value: $child->node->read(row: $row)
             );
         }
 
