@@ -27,7 +27,7 @@ final readonly class SinglePropertyResolver implements Resolver
         }
 
         $instance = $descriptor->newInstance();
-        $single->setValue($instance, $this->reader->resolve(value: $value, type: $single->getType()));
+        $single->setValue($instance, $this->reader->resolve(type: $single->getType(), value: $value));
 
         return $instance;
     }

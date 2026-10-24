@@ -43,13 +43,13 @@ final readonly class ValueReader
         $normalized = Source::normalize(source: $source);
 
         if (is_a($type, IterableMappable::class, true)) {
-            return $this->buildIterable(descriptor: $descriptor, source: $normalized);
+            return $this->buildIterable(source: $normalized, descriptor: $descriptor);
         }
 
         return $this->hydrator->build(source: $normalized, descriptor: $descriptor);
     }
 
-    public function resolve(mixed $value, ?ReflectionType $type): mixed
+    public function resolve(?ReflectionType $type, mixed $value): mixed
     {
         if (!$type instanceof ReflectionNamedType) {
             return $value;
@@ -59,10 +59,10 @@ final readonly class ValueReader
             return $value;
         }
 
-        return $this->resolveClass(value: $value, class: $type->getName());
+        return $this->resolveClass(class: $type->getName(), value: $value);
     }
 
-    private function resolveClass(mixed $value, string $class): object
+    private function resolveClass(string $class, mixed $value): object
     {
         if ($value instanceof $class) {
             return $value;
@@ -81,7 +81,7 @@ final readonly class ValueReader
         return $this->chain->resolve(value: $value, descriptor: Descriptors::of(type: $class));
     }
 
-    private function buildIterable(ClassDescriptor $descriptor, array $source): object
+    private function buildIterable(array $source, ClassDescriptor $descriptor): object
     {
         $type = $descriptor->type;
         $elementType = $descriptor->elementType;
